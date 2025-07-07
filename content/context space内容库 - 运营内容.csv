@@ -1,0 +1,36 @@
+"﻿""内容主题""",提出人,发布账号,拟发布日期,主题分类,内容形式,状态,是否审核@Jorie（每天 20:00）,是否发布,地址,数据分析,父记录
+"Welcome to AIFlowWatch! I’ll share what I learn building with RAG, agents, and generative pipelines—plus Big Tech moves worth watching. If you care about AI workflows beyond cool demos, stick around. Let’s navigate this together. #AIcommunity",张曦月,ai flow watch,2025/06/27,干货洞察,纯文字,,,是,,,
+"AI agents are here: they plan, call APIs, and execute tasks autonomously. Projects like AutoGen & CrewAI show agents are more than hype. Real products are being built today. #AIagents",张曦月,ai flow watch,2025/06/27,,,,,是,,,
+"RAG ≠ magic. If your index is outdated, your answers will be too. Always monitor your embeddings & refresh your knowledge base. Production RAG needs ops discipline. #LLMops",张曦月,ai flow watch,2025/06/28,,,,,否,,,
+"Fine-tuning vs. RAG? Fine-tuning bakes knowledge into weights, great for fixed domains. RAG keeps info fresh & dynamic. Choose wisely: use both if you can. #AI",张曦月,ai flow watch,2025/06/28,,,,,否,,,
+"OpenAI’s rumored GPT-5, Google’s Gemini updates, and Meta’s new open-source agents—all in the last 30 days. The pace of AI innovation has never been faster. #AInews",张曦月,ai flow watch,2025/06/29,,,,,否,,,
+"Generative AI workflows need orchestration: memory, planning, and evaluation. Prompt chaining isn’t enough. Next-gen apps require proper pipelines. #AIworkflows",张曦月,ai flow watch,2025/06/29,,,,,否,,,
+"Retrieval-Augmented Generation (RAG) is the new frontier of LLMs: it combines knowledge retrieval with generation, keeping models up-to-date without retraining. Don’t sleep on it. #AI #RAG",张曦月,ai flow watch,2025/06/30,,,,,否,,,
+"“RAG Hallucination” is real: models can hallucinate even retrieved facts. Combat it with hybrid search, context filters, and human-in-the-loop validation. #AI #RAG",张曦月,ai flow watch,2025/06/30,,,,,否,,,
+"Ladybird Web Browser - A New Era in BrowsingLadybird is an independent web browser built with a cutting-edge engine based on web standards. Currently in pre-alpha, it's perfect for developers who want to explore and contribute to a fresh, innovative browser.Key Features:Multi-Process Architecture: Enhances performance and security.Sandboxed Tabs: Each tab runs in its own process, isolated from the system.Built on SerenityOS: Using powerful libraries for web rendering, JavaScript, cryptography, and more.Supported on Linux, macOS, and Windows (via WSL2).Join the Ladybird project and help shape the future of web browsing! Get Started
+#Ladybird #WebBrowser #OpenSource #DeveloperTools #InnovativeTech #WebStandards",张欣,OpenSource Radar,2025/06/30,,,,,否,,,
+"🔥 JSON Crack - Visualize & Manipulate JSON Data Effortlessly 🌐
+JSON Crack is an open-source tool that transforms your JSON, YAML, CSV, and other data into interactive visual graphs for easier exploration, formatting, and validation.
+Key Features:
+Instant Visualization: Convert data into interactive graphs in light or dark mode.
+Format Conversion: Easily switch between JSON, CSV, XML, and more.
+Code Generation: Auto-generate TypeScript interfaces, Golang structs, and JSON Schema.
+Privacy: Local processing — your data stays secure!
+🚀 Built with: Next.js, React.js
+🔗 Get Started with JSON Crack
+#JSON #OpenSource #DataVisualization #DeveloperTools #Privacy #CodeGeneration",张欣,OpenSource Radar,2025/06/30,,,,,否,,,
+"🎨 GIMP 3.1 - Powerful Open-Source Image Editor
+GIMP 3.1 is a versatile, open-source image editing tool for everything from basic editing to advanced graphic design.
+Key Features:
+Comprehensive Tools: Ideal for photo retouching, composition, and design.
+Plugin Support: Extend functionality with community plugins.
+Free & Open-Source: Constantly updated by the community.
+GIMP is a powerful, free alternative for professional-grade image editing.
+🔗 Download GIMP
+#GIMP #ImageEditing #OpenSource #DesignTools",张欣,oss discoveries,2025/06/30,,,,,否,,,
+,马侨仪,twitter,2025/07/03,,,,,否,,,
+,马侨仪,twitter,2025/07/03,,,,,否,,,
+,马侨仪,twitter,2025/07/03,,,,,否,,,
+,,,,,,,,否,,,
+,,,,,,,,否,,,
+,,,,,,,,否,,,

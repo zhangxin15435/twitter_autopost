@@ -1,0 +1,69 @@
+name: 代码检查和测试
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+    
+    - name: 设置Python环境
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+    
+    - name: 安装依赖
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install flake8 pytest
+    
+    - name: 代码格式检查
+      run: |
+        # 检查Python代码格式
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # 检查代码风格（警告）
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: 语法检查
+      run: |
+        # 检查Python语法
+        python -m py_compile main.py
+        python -m py_compile connect_twitter.py
+        python -m py_compile connect_feishu.py
+        python -m py_compile connect_csv.py
+        python -m py_compile show_content_source.py
+    
+    - name: 导入测试
+      run: |
+        # 测试模块导入
+        python -c "import main; print('main.py 导入成功')"
+        python -c "import connect_twitter; print('connect_twitter.py 导入成功')"
+        python -c "import connect_feishu; print('connect_feishu.py 导入成功')"
+        python -c "import connect_csv; print('connect_csv.py 导入成功')"
+    
+    - name: 配置文件检查
+      run: |
+        # 检查配置文件示例
+        if [ -f "config.env.example" ]; then
+          echo "✅ 配置文件示例存在"
+        else
+          echo "❌ 配置文件示例不存在"
+          exit 1
+        fi
+        
+        # 检查requirements.txt
+        if [ -f "requirements.txt" ]; then
+          echo "✅ 依赖文件存在"
+        else
+          echo "❌ 依赖文件不存在"
+          exit 1
+        fi 

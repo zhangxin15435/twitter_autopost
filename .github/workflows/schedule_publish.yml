@@ -1,0 +1,72 @@
+name: 定时发布Twitter内容
+
+on:
+  schedule:
+    # 每天北京时间 6:00, 12:00, 18:00, 24:00 执行 (UTC时间 22:00, 4:00, 10:00, 16:00)
+    - cron: '0 22,4,10,16 * * *'
+  workflow_dispatch:
+    inputs:
+      debug_mode:
+        description: '是否开启调试模式'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  publish-twitter:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+    
+    - name: 设置Python环境
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+    
+    - name: 安装依赖
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: 创建环境变量文件
+      run: |
+        cat > .env << EOF
+        # Twitter API 配置
+        TWITTER_CONSUMER_KEY=${{ secrets.TWITTER_CONSUMER_KEY }}
+        TWITTER_CONSUMER_SECRET=${{ secrets.TWITTER_CONSUMER_SECRET }}
+        TWITTER_ACCESS_TOKEN=${{ secrets.TWITTER_ACCESS_TOKEN }}
+        TWITTER_ACCESS_TOKEN_SECRET=${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+        TWITTER_BEARER_TOKEN=${{ secrets.TWITTER_BEARER_TOKEN }}
+        
+        # 飞书API配置
+        FEISHU_APP_ID=${{ secrets.FEISHU_APP_ID }}
+        FEISHU_APP_SECRET=${{ secrets.FEISHU_APP_SECRET }}
+        FEISHU_BITABLE_TOKEN=${{ secrets.FEISHU_BITABLE_TOKEN }}
+        FEISHU_TABLE_ID=${{ secrets.FEISHU_TABLE_ID }}
+        
+        # 其他配置
+        TIMEZONE=Asia/Shanghai
+        DEBUG=${{ github.event.inputs.debug_mode || 'false' }}
+        EOF
+    
+    - name: 测试API连接
+      run: |
+        python main.py test
+    
+    - name: 执行定时发布任务
+      run: |
+        python main.py schedule
+    
+    - name: 上传日志文件
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: twitter-bot-logs-${{ github.run_number }}
+        path: twitter_auto_bot.log
+        retention-days: 7 

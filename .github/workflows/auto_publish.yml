@@ -1,0 +1,83 @@
+name: 自动发布文章到Twitter
+
+on:
+  # 定时任务：每天3次发布
+  schedule:
+    # 北京时间 08:00 (UTC 00:00)
+    - cron: '0 0 * * *'
+    # 北京时间 14:00 (UTC 06:00)
+    - cron: '0 6 * * *'
+    # 北京时间 20:00 (UTC 12:00)
+    - cron: '0 12 * * *'
+  
+  # 手动触发
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: '运行模式'
+        required: true
+        default: 'schedule'
+        type: choice
+        options:
+          - schedule
+          - test
+          - status
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+    
+    - name: 设置Python环境
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: 安装依赖
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: 创建环境配置
+      run: |
+        echo "TWITTER_CONSUMER_KEY=${{ secrets.TWITTER_CONSUMER_KEY }}" >> .env
+        echo "TWITTER_CONSUMER_SECRET=${{ secrets.TWITTER_CONSUMER_SECRET }}" >> .env
+        echo "TWITTER_ACCESS_TOKEN=${{ secrets.TWITTER_ACCESS_TOKEN }}" >> .env
+        echo "TWITTER_ACCESS_TOKEN_SECRET=${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}" >> .env
+        echo "TWITTER_BEARER_TOKEN=${{ secrets.TWITTER_BEARER_TOKEN }}" >> .env
+        echo "FEISHU_APP_ID=${{ secrets.FEISHU_APP_ID }}" >> .env
+        echo "FEISHU_APP_SECRET=${{ secrets.FEISHU_APP_SECRET }}" >> .env
+        echo "FEISHU_BITABLE_TOKEN=${{ secrets.FEISHU_BITABLE_TOKEN }}" >> .env
+        echo "FEISHU_TABLE_ID=${{ secrets.FEISHU_TABLE_ID }}" >> .env
+        echo "TIMEZONE=Asia/Shanghai" >> .env
+        echo "DEBUG=False" >> .env
+    
+    - name: 运行自动发布
+      run: |
+        if [ "${{ github.event.inputs.mode }}" = "test" ]; then
+          python main.py test
+        elif [ "${{ github.event.inputs.mode }}" = "status" ]; then
+          python main.py status
+        else
+          python main.py schedule
+        fi
+    
+    - name: 上传日志文件
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: logs-${{ github.run_number }}
+        path: |
+          *.log
+          !*.pyc
+        retention-days: 7
+    
+    - name: 发送通知（失败时）
+      if: failure()
+      run: |
+        echo "任务执行失败，请检查日志"
+        cat twitter_auto_bot.log || echo "日志文件不存在" 

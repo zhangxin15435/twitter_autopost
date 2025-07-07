@@ -1,0 +1,117 @@
+name: Twitter多账号自动发布
+
+on:
+  schedule:
+    # 每天UTC时间12:00运行（北京时间20:00）
+    - cron: '0 12 * * *'
+  # 允许手动触发
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+    
+    - name: 设置Python环境
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: 安装依赖
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: 检查content文件夹
+      run: |
+        echo "检查content文件夹内容："
+        ls -la content/
+        echo "CSV文件行数："
+        wc -l content/*.csv
+    
+    - name: 测试多账号配置
+      env:
+        # 默认账号配置
+        TWITTER_CONSUMER_KEY: ${{ secrets.TWITTER_CONSUMER_KEY }}
+        TWITTER_CONSUMER_SECRET: ${{ secrets.TWITTER_CONSUMER_SECRET }}
+        TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+        TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+        TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
+        
+        # AI Flow Watch账号配置（可选）
+        TWITTER_AIFLOWWATCH_CONSUMER_KEY: ${{ secrets.TWITTER_AIFLOWWATCH_CONSUMER_KEY }}
+        TWITTER_AIFLOWWATCH_CONSUMER_SECRET: ${{ secrets.TWITTER_AIFLOWWATCH_CONSUMER_SECRET }}
+        TWITTER_AIFLOWWATCH_ACCESS_TOKEN: ${{ secrets.TWITTER_AIFLOWWATCH_ACCESS_TOKEN }}
+        TWITTER_AIFLOWWATCH_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_AIFLOWWATCH_ACCESS_TOKEN_SECRET }}
+        TWITTER_AIFLOWWATCH_BEARER_TOKEN: ${{ secrets.TWITTER_AIFLOWWATCH_BEARER_TOKEN }}
+        
+        # OpenSource Radar账号配置（可选）
+        TWITTER_OPENSOURCERADAR_CONSUMER_KEY: ${{ secrets.TWITTER_OPENSOURCERADAR_CONSUMER_KEY }}
+        TWITTER_OPENSOURCERADAR_CONSUMER_SECRET: ${{ secrets.TWITTER_OPENSOURCERADAR_CONSUMER_SECRET }}
+        TWITTER_OPENSOURCERADAR_ACCESS_TOKEN: ${{ secrets.TWITTER_OPENSOURCERADAR_ACCESS_TOKEN }}
+        TWITTER_OPENSOURCERADAR_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_OPENSOURCERADAR_ACCESS_TOKEN_SECRET }}
+        TWITTER_OPENSOURCERADAR_BEARER_TOKEN: ${{ secrets.TWITTER_OPENSOURCERADAR_BEARER_TOKEN }}
+        
+        # OSS Discoveries账号配置（可选）
+        TWITTER_OSSDISCOVERIES_CONSUMER_KEY: ${{ secrets.TWITTER_OSSDISCOVERIES_CONSUMER_KEY }}
+        TWITTER_OSSDISCOVERIES_CONSUMER_SECRET: ${{ secrets.TWITTER_OSSDISCOVERIES_CONSUMER_SECRET }}
+        TWITTER_OSSDISCOVERIES_ACCESS_TOKEN: ${{ secrets.TWITTER_OSSDISCOVERIES_ACCESS_TOKEN }}
+        TWITTER_OSSDISCOVERIES_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_OSSDISCOVERIES_ACCESS_TOKEN_SECRET }}
+        TWITTER_OSSDISCOVERIES_BEARER_TOKEN: ${{ secrets.TWITTER_OSSDISCOVERIES_BEARER_TOKEN }}
+      run: |
+        echo "测试多账号配置..."
+        python connect_twitter_multi.py
+    
+    - name: 运行多账号自动发布
+      env:
+        # 默认账号配置
+        TWITTER_CONSUMER_KEY: ${{ secrets.TWITTER_CONSUMER_KEY }}
+        TWITTER_CONSUMER_SECRET: ${{ secrets.TWITTER_CONSUMER_SECRET }}
+        TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+        TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+        TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
+        
+        # AI Flow Watch账号配置（可选）
+        TWITTER_AIFLOWWATCH_CONSUMER_KEY: ${{ secrets.TWITTER_AIFLOWWATCH_CONSUMER_KEY }}
+        TWITTER_AIFLOWWATCH_CONSUMER_SECRET: ${{ secrets.TWITTER_AIFLOWWATCH_CONSUMER_SECRET }}
+        TWITTER_AIFLOWWATCH_ACCESS_TOKEN: ${{ secrets.TWITTER_AIFLOWWATCH_ACCESS_TOKEN }}
+        TWITTER_AIFLOWWATCH_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_AIFLOWWATCH_ACCESS_TOKEN_SECRET }}
+        TWITTER_AIFLOWWATCH_BEARER_TOKEN: ${{ secrets.TWITTER_AIFLOWWATCH_BEARER_TOKEN }}
+        
+        # OpenSource Radar账号配置（可选）
+        TWITTER_OPENSOURCERADAR_CONSUMER_KEY: ${{ secrets.TWITTER_OPENSOURCERADAR_CONSUMER_KEY }}
+        TWITTER_OPENSOURCERADAR_CONSUMER_SECRET: ${{ secrets.TWITTER_OPENSOURCERADAR_CONSUMER_SECRET }}
+        TWITTER_OPENSOURCERADAR_ACCESS_TOKEN: ${{ secrets.TWITTER_OPENSOURCERADAR_ACCESS_TOKEN }}
+        TWITTER_OPENSOURCERADAR_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_OPENSOURCERADAR_ACCESS_TOKEN_SECRET }}
+        TWITTER_OPENSOURCERADAR_BEARER_TOKEN: ${{ secrets.TWITTER_OPENSOURCERADAR_BEARER_TOKEN }}
+        
+        # OSS Discoveries账号配置（可选）
+        TWITTER_OSSDISCOVERIES_CONSUMER_KEY: ${{ secrets.TWITTER_OSSDISCOVERIES_CONSUMER_KEY }}
+        TWITTER_OSSDISCOVERIES_CONSUMER_SECRET: ${{ secrets.TWITTER_OSSDISCOVERIES_CONSUMER_SECRET }}
+        TWITTER_OSSDISCOVERIES_ACCESS_TOKEN: ${{ secrets.TWITTER_OSSDISCOVERIES_ACCESS_TOKEN }}
+        TWITTER_OSSDISCOVERIES_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_OSSDISCOVERIES_ACCESS_TOKEN_SECRET }}
+        TWITTER_OSSDISCOVERIES_BEARER_TOKEN: ${{ secrets.TWITTER_OSSDISCOVERIES_BEARER_TOKEN }}
+      run: |
+        echo "开始执行多账号自动发布任务..."
+        python main_multi_account.py
+        echo "多账号发布任务完成"
+    
+    - name: 提交更新的内容文件
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add content/
+        git diff --staged --quiet || (git commit -m "🤖 多账号自动更新发布状态 - $(date '+%Y-%m-%d %H:%M:%S')" && git push)
+    
+    - name: 上传日志文件
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: twitter-multi-auto-logs
+        path: |
+          twitter_multi_auto.log
+          *.log
+        retention-days: 30 
