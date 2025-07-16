@@ -30,11 +30,29 @@ jobs:
       with:
         python-version: '3.9'
         cache: 'pip'
+        cache-dependency-path: 'requirements.txt'
     
-    - name: 📦 安装依赖
+    - name: 📦 缓存Python依赖
+      uses: actions/cache@v4
+      id: cache-deps
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: 📦 安装依赖 (仅在缓存未命中时)
+      if: steps.cache-deps.outputs.cache-hit != 'true'
       run: |
+        echo "🔄 缓存未命中，安装依赖..."
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install --no-cache-dir -r requirements.txt
+    
+    - name: ✅ 使用缓存依赖
+      if: steps.cache-deps.outputs.cache-hit == 'true'
+      run: |
+        echo "⚡ 使用缓存依赖，跳过安装步骤"
+        pip list
     
     - name: 📄 检查内容文件
       run: |
