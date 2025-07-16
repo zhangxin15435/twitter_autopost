@@ -113,7 +113,10 @@ jobs:
         TWITTER_OPENSOURCEREADER_BEARER_TOKEN: ${{ secrets.TWITTER_OPENSOURCEREADER_BEARER_TOKEN }}
       run: |
         echo "🔍 调试账号配置状态..."
-        python debug_github_actions.py
+        echo "📋 检查TWITTER环境变量配置："
+        env | grep "TWITTER_" | cut -d'=' -f1 | while read var; do
+          echo "  ✅ $var 已配置"
+        done
         
         echo "🧪 测试目标账号连接..."
         python connect_twitter_multi.py
