@@ -1,0 +1,147 @@
+name: 四账号Twitter每日自动发布
+
+on:
+  schedule:
+    # 每天4次自动发布 - 北京时间 6:00, 12:00, 18:00, 24:00
+    - cron: '0 22,4,10,16 * * *'  # UTC时间 22:00, 4:00, 10:00, 16:00
+  workflow_dispatch:
+    inputs:
+      debug_mode:
+        description: '是否开启调试模式'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  auto-publish-twitter:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 检出代码
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: 🐍 设置Python环境
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+    
+    - name: 📦 安装依赖
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: 📄 检查内容文件
+      run: |
+        echo "📊 检查content文件夹："
+        ls -la content/
+        if [ -f content/*.csv ]; then
+          echo "✅ CSV文件存在"
+          wc -l content/*.csv
+        else
+          echo "❌ 未找到CSV文件"
+          exit 1
+        fi
+    
+    - name: 🔗 测试四账号连接
+      env:
+        # ContextSpace主账号
+        TWITTER_CONTEXTSPACE_CONSUMER_KEY: ${{ secrets.TWITTER_CONTEXTSPACE_CONSUMER_KEY }}
+        TWITTER_CONTEXTSPACE_CONSUMER_SECRET: ${{ secrets.TWITTER_CONTEXTSPACE_CONSUMER_SECRET }}
+        TWITTER_CONTEXTSPACE_ACCESS_TOKEN: ${{ secrets.TWITTER_CONTEXTSPACE_ACCESS_TOKEN }}
+        TWITTER_CONTEXTSPACE_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_CONTEXTSPACE_ACCESS_TOKEN_SECRET }}
+        TWITTER_CONTEXTSPACE_BEARER_TOKEN: ${{ secrets.TWITTER_CONTEXTSPACE_BEARER_TOKEN }}
+        
+        # OSS Discoveries账号
+        TWITTER_OSSDISCOVERIES_CONSUMER_KEY: ${{ secrets.TWITTER_OSSDISCOVERIES_CONSUMER_KEY }}
+        TWITTER_OSSDISCOVERIES_CONSUMER_SECRET: ${{ secrets.TWITTER_OSSDISCOVERIES_CONSUMER_SECRET }}
+        TWITTER_OSSDISCOVERIES_ACCESS_TOKEN: ${{ secrets.TWITTER_OSSDISCOVERIES_ACCESS_TOKEN }}
+        TWITTER_OSSDISCOVERIES_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_OSSDISCOVERIES_ACCESS_TOKEN_SECRET }}
+        TWITTER_OSSDISCOVERIES_BEARER_TOKEN: ${{ secrets.TWITTER_OSSDISCOVERIES_BEARER_TOKEN }}
+        
+        # AI Flow Watch账号
+        TWITTER_AIFLOWWATCH_CONSUMER_KEY: ${{ secrets.TWITTER_AIFLOWWATCH_CONSUMER_KEY }}
+        TWITTER_AIFLOWWATCH_CONSUMER_SECRET: ${{ secrets.TWITTER_AIFLOWWATCH_CONSUMER_SECRET }}
+        TWITTER_AIFLOWWATCH_ACCESS_TOKEN: ${{ secrets.TWITTER_AIFLOWWATCH_ACCESS_TOKEN }}
+        TWITTER_AIFLOWWATCH_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_AIFLOWWATCH_ACCESS_TOKEN_SECRET }}
+        TWITTER_AIFLOWWATCH_BEARER_TOKEN: ${{ secrets.TWITTER_AIFLOWWATCH_BEARER_TOKEN }}
+        
+        # Open Source Reader账号
+        TWITTER_OPENSOURCEREADER_CONSUMER_KEY: ${{ secrets.TWITTER_OPENSOURCEREADER_CONSUMER_KEY }}
+        TWITTER_OPENSOURCEREADER_CONSUMER_SECRET: ${{ secrets.TWITTER_OPENSOURCEREADER_CONSUMER_SECRET }}
+        TWITTER_OPENSOURCEREADER_ACCESS_TOKEN: ${{ secrets.TWITTER_OPENSOURCEREADER_ACCESS_TOKEN }}
+        TWITTER_OPENSOURCEREADER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_OPENSOURCEREADER_ACCESS_TOKEN_SECRET }}
+        TWITTER_OPENSOURCEREADER_BEARER_TOKEN: ${{ secrets.TWITTER_OPENSOURCEREADER_BEARER_TOKEN }}
+        
+        # 其他配置
+        DEBUG: ${{ github.event.inputs.debug_mode || 'false' }}
+      run: |
+        echo "🧪 测试四账号连接..."
+        python connect_twitter_multi.py
+    
+    - name: 🚀 执行四账号自动发布
+      env:
+        # ContextSpace主账号
+        TWITTER_CONTEXTSPACE_CONSUMER_KEY: ${{ secrets.TWITTER_CONTEXTSPACE_CONSUMER_KEY }}
+        TWITTER_CONTEXTSPACE_CONSUMER_SECRET: ${{ secrets.TWITTER_CONTEXTSPACE_CONSUMER_SECRET }}
+        TWITTER_CONTEXTSPACE_ACCESS_TOKEN: ${{ secrets.TWITTER_CONTEXTSPACE_ACCESS_TOKEN }}
+        TWITTER_CONTEXTSPACE_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_CONTEXTSPACE_ACCESS_TOKEN_SECRET }}
+        TWITTER_CONTEXTSPACE_BEARER_TOKEN: ${{ secrets.TWITTER_CONTEXTSPACE_BEARER_TOKEN }}
+        
+        # OSS Discoveries账号
+        TWITTER_OSSDISCOVERIES_CONSUMER_KEY: ${{ secrets.TWITTER_OSSDISCOVERIES_CONSUMER_KEY }}
+        TWITTER_OSSDISCOVERIES_CONSUMER_SECRET: ${{ secrets.TWITTER_OSSDISCOVERIES_CONSUMER_SECRET }}
+        TWITTER_OSSDISCOVERIES_ACCESS_TOKEN: ${{ secrets.TWITTER_OSSDISCOVERIES_ACCESS_TOKEN }}
+        TWITTER_OSSDISCOVERIES_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_OSSDISCOVERIES_ACCESS_TOKEN_SECRET }}
+        TWITTER_OSSDISCOVERIES_BEARER_TOKEN: ${{ secrets.TWITTER_OSSDISCOVERIES_BEARER_TOKEN }}
+        
+        # AI Flow Watch账号
+        TWITTER_AIFLOWWATCH_CONSUMER_KEY: ${{ secrets.TWITTER_AIFLOWWATCH_CONSUMER_KEY }}
+        TWITTER_AIFLOWWATCH_CONSUMER_SECRET: ${{ secrets.TWITTER_AIFLOWWATCH_CONSUMER_SECRET }}
+        TWITTER_AIFLOWWATCH_ACCESS_TOKEN: ${{ secrets.TWITTER_AIFLOWWATCH_ACCESS_TOKEN }}
+        TWITTER_AIFLOWWATCH_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_AIFLOWWATCH_ACCESS_TOKEN_SECRET }}
+        TWITTER_AIFLOWWATCH_BEARER_TOKEN: ${{ secrets.TWITTER_AIFLOWWATCH_BEARER_TOKEN }}
+        
+        # Open Source Reader账号
+        TWITTER_OPENSOURCEREADER_CONSUMER_KEY: ${{ secrets.TWITTER_OPENSOURCEREADER_CONSUMER_KEY }}
+        TWITTER_OPENSOURCEREADER_CONSUMER_SECRET: ${{ secrets.TWITTER_OPENSOURCEREADER_CONSUMER_SECRET }}
+        TWITTER_OPENSOURCEREADER_ACCESS_TOKEN: ${{ secrets.TWITTER_OPENSOURCEREADER_ACCESS_TOKEN }}
+        TWITTER_OPENSOURCEREADER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_OPENSOURCEREADER_ACCESS_TOKEN_SECRET }}
+        TWITTER_OPENSOURCEREADER_BEARER_TOKEN: ${{ secrets.TWITTER_OPENSOURCEREADER_BEARER_TOKEN }}
+        
+        # 其他配置
+        DEBUG: ${{ github.event.inputs.debug_mode || 'false' }}
+      run: |
+        echo "🚀 开始四账号自动发布任务..."
+        echo "⏰ 当前时间: $(date)"
+        echo "🌍 UTC时间: $(date -u)"
+        python main_multi_account.py
+        echo "✅ 四账号发布任务完成"
+    
+    - name: 💾 提交更新的内容文件
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add content/
+        if git diff --staged --quiet; then
+          echo "📝 没有内容文件更新"
+        else
+          git commit -m "🤖 四账号自动发布更新 - $(date '+%Y-%m-%d %H:%M:%S')"
+          git push
+          echo "✅ 内容文件更新已提交"
+        fi
+    
+    - name: 📊 上传日志文件
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: twitter-multi-logs-${{ github.run_number }}
+        path: |
+          twitter_multi_auto.log
+          *.log
+        retention-days: 7 
