@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter四账号发布控制台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #1DA1F2;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .header p {
+            color: #657786;
+            font-size: 1.1em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #14171A;
+            font-size: 1.1em;
+        }
+
+        .tweet-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #E1E8ED;
+            border-radius: 12px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 120px;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        .tweet-input:focus {
+            outline: none;
+            border-color: #1DA1F2;
+            box-shadow: 0 0 0 3px rgba(29, 161, 242, 0.1);
+        }
+
+        .char-counter {
+            text-align: right;
+            margin-top: 5px;
+            font-size: 14px;
+            color: #657786;
+        }
+
+        .char-counter.warning {
+            color: #E1B12C;
+        }
+
+        .char-counter.error {
+            color: #E0245E;
+        }
+
+        .account-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .account-option {
+            position: relative;
+        }
+
+        .account-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .account-card {
+            padding: 20px;
+            border: 2px solid #E1E8ED;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #F7F9FA;
+        }
+
+        .account-card:hover {
+            border-color: #1DA1F2;
+            background: #F0F8FF;
+        }
+
+        .account-option input[type="radio"]:checked+.account-card {
+            border-color: #1DA1F2;
+            background: #F0F8FF;
+            box-shadow: 0 0 0 3px rgba(29, 161, 242, 0.1);
+        }
+
+        .account-name {
+            font-weight: 700;
+            color: #14171A;
+            margin-bottom: 5px;
+            font-size: 1.1em;
+        }
+
+        .account-desc {
+            color: #657786;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        .publish-button {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #1DA1F2, #0d8bd9);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .publish-button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #0d8bd9, #0a7bc4);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(29, 161, 242, 0.3);
+        }
+
+        .publish-button:disabled {
+            background: #AAB8C2;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .instructions {
+            background: #F0F8FF;
+            border: 1px solid #1DA1F2;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .instructions h3 {
+            color: #1DA1F2;
+            margin-bottom: 15px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            color: #14171A;
+            line-height: 1.5;
+        }
+
+        .github-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #1DA1F2;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .github-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px;
+                margin: 10px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .account-selector {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐦 Twitter发布控制台</h1>
+            <p>智能四账号推文发布系统</p>
+        </div>
+
+        <form id="tweetForm">
+            <div class="form-group">
+                <label for="tweetContent">推文内容</label>
+                <textarea id="tweetContent" class="tweet-input" placeholder="在这里输入您要发布的推文内容..." maxlength="280"
+                    required></textarea>
+                <div class="char-counter" id="charCounter">0 / 280</div>
+            </div>
+
+            <div class="form-group">
+                <label>选择发布账号</label>
+                <div class="account-selector">
+                    <div class="account-option">
+                        <input type="radio" id="contextspace" name="account" value="ContextSpace" required>
+                        <label for="contextspace" class="account-card">
+                            <div class="account-name">🏢 ContextSpace</div>
+                            <div class="account-desc">主账号，综合内容发布</div>
+                        </label>
+                    </div>
+
+                    <div class="account-option">
+                        <input type="radio" id="ossdiscoveries" name="account" value="OSS Discoveries">
+                        <label for="ossdiscoveries" class="account-card">
+                            <div class="account-name">🔧 OSS Discoveries</div>
+                            <div class="account-desc">开源工具发现、设计工具</div>
+                        </label>
+                    </div>
+
+                    <div class="account-option">
+                        <input type="radio" id="aiflowwatch" name="account" value="Ai flow watch">
+                        <label for="aiflowwatch" class="account-card">
+                            <div class="account-name">🤖 AI Flow Watch</div>
+                            <div class="account-desc">AI技术、机器学习、工作流</div>
+                        </label>
+                    </div>
+
+                    <div class="account-option">
+                        <input type="radio" id="opensourcereader" name="account" value="Open source reader">
+                        <label for="opensourcereader" class="account-card">
+                            <div class="account-name">📚 Open Source Reader</div>
+                            <div class="account-desc">开源项目介绍、技术评测</div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="publish-button" id="publishBtn" onclick="publishTweet()">
+                🚀 立即发布推文
+            </button>
+        </form>
+
+        <div class="instructions">
+            <h3>📋 使用说明</h3>
+            <ol>
+                <li>在上方文本框中输入您要发布的推文内容（最多280字符）</li>
+                <li>选择要发布到的Twitter账号</li>
+                <li>点击"立即发布推文"按钮</li>
+                <li>系统会自动跳转到GitHub Actions页面执行发布</li>
+                <li>在GitHub Actions页面填入相同的内容和账号信息</li>
+                <li>等待工作流执行完成，查看发布结果</li>
+            </ol>
+            <p style="margin-top: 15px;">
+                <a href="https://github.com/zhangxin15435/twitter_autopost/actions" target="_blank" class="github-link">
+                    📂 前往GitHub Actions
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const tweetContent = document.getElementById('tweetContent');
+        const charCounter = document.getElementById('charCounter');
+        const publishBtn = document.getElementById('publishBtn');
+
+        // 字符计数器
+        tweetContent.addEventListener('input', function () {
+            const length = this.value.length;
+            const remaining = 280 - length;
+
+            charCounter.textContent = `${length} / 280`;
+
+            if (remaining < 20) {
+                charCounter.className = 'char-counter error';
+            } else if (remaining < 50) {
+                charCounter.className = 'char-counter warning';
+            } else {
+                charCounter.className = 'char-counter';
+            }
+
+            // 更新发布按钮状态
+            updatePublishButton();
+        });
+
+        // 监听账号选择
+        document.querySelectorAll('input[name="account"]').forEach(radio => {
+            radio.addEventListener('change', updatePublishButton);
+        });
+
+        function updatePublishButton() {
+            const content = tweetContent.value.trim();
+            const selectedAccount = document.querySelector('input[name="account"]:checked');
+
+            publishBtn.disabled = !content || !selectedAccount || content.length > 280;
+        }
+
+        function publishTweet() {
+            const content = tweetContent.value.trim();
+            const selectedAccount = document.querySelector('input[name="account"]:checked');
+
+            if (!content || !selectedAccount) {
+                alert('请输入推文内容并选择发布账号');
+                return;
+            }
+
+            if (content.length > 280) {
+                alert('推文内容超过280字符限制');
+                return;
+            }
+
+            // 构建GitHub Actions URL
+            const repoUrl = 'https://github.com/zhangxin15435/twitter_autopost';
+            const actionsUrl = `${repoUrl}/actions/workflows/manual_publish.yml`;
+
+            // 保存数据到localStorage，供GitHub Actions页面使用
+            localStorage.setItem('pendingTweet', JSON.stringify({
+                content: content,
+                account: selectedAccount.value,
+                timestamp: new Date().toISOString()
+            }));
+
+            // 显示确认信息
+            const message = `即将发布推文：\n\n内容：${content}\n账号：${selectedAccount.value}\n\n确认要继续吗？`;
+
+            if (confirm(message)) {
+                // 复制内容到剪贴板
+                navigator.clipboard.writeText(content).then(() => {
+                    alert(`推文内容已复制到剪贴板！\n\n接下来会跳转到GitHub Actions页面，请：\n1. 点击"Run workflow"\n2. 粘贴推文内容\n3. 选择账号：${selectedAccount.value}\n4. 点击"Run workflow"执行`);
+
+                    // 跳转到GitHub Actions
+                    window.open(actionsUrl, '_blank');
+                }).catch(() => {
+                    alert(`准备发布推文：\n\n内容：${content}\n账号：${selectedAccount.value}\n\n接下来会跳转到GitHub Actions页面执行发布`);
+                    window.open(actionsUrl, '_blank');
+                });
+            }
+        }
+
+        // 页面加载时检查是否有待发布的推文
+        window.addEventListener('load', function () {
+            const pendingTweet = localStorage.getItem('pendingTweet');
+            if (pendingTweet) {
+                try {
+                    const data = JSON.parse(pendingTweet);
+                    const timeDiff = new Date() - new Date(data.timestamp);
+
+                    // 如果数据在1小时内，自动填充
+                    if (timeDiff < 3600000) {
+                        tweetContent.value = data.content;
+                        document.querySelector(`input[value="${data.account}"]`).checked = true;
+                        updatePublishButton();
+
+                        // 清除已使用的数据
+                        localStorage.removeItem('pendingTweet');
+                    }
+                } catch (e) {
+                    localStorage.removeItem('pendingTweet');
+                }
+            }
+        });
+
+        // 初始化按钮状态
+        updatePublishButton();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,161 @@
+name: 手动发布Twitter推文
+
+on:
+  workflow_dispatch:
+    inputs:
+      tweet_content:
+        description: '推文内容'
+        required: true
+        type: string
+      target_account:
+        description: '选择发布账号'
+        required: true
+        type: choice
+        options:
+          - 'ContextSpace'
+          - 'OSS Discoveries'
+          - 'Ai flow watch'
+          - 'Open source reader'
+        default: 'ContextSpace'
+      debug_mode:
+        description: '调试模式（不实际发布）'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  manual-tweet-publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 检出代码
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: 🐍 设置Python环境
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+    
+    - name: 📦 安装依赖
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: 📝 显示发布信息
+      run: |
+        echo "🚀 准备手动发布推文"
+        echo "📄 推文内容: ${{ github.event.inputs.tweet_content }}"
+        echo "📱 目标账号: ${{ github.event.inputs.target_account }}"
+        echo "🐛 调试模式: ${{ github.event.inputs.debug_mode }}"
+        echo "⏰ 执行时间: $(date)"
+        
+        # 检查推文长度
+        content_length=$(echo "${{ github.event.inputs.tweet_content }}" | wc -c)
+        echo "📊 推文长度: ${content_length} 字符"
+        
+        if [ $content_length -gt 280 ]; then
+          echo "❌ 错误：推文内容超过280字符限制"
+          exit 1
+        fi
+    
+    - name: 🔗 测试账号连接
+      env:
+        # ContextSpace主账号
+        TWITTER_CONTEXTSPACE_CONSUMER_KEY: ${{ secrets.TWITTER_CONTEXTSPACE_CONSUMER_KEY }}
+        TWITTER_CONTEXTSPACE_CONSUMER_SECRET: ${{ secrets.TWITTER_CONTEXTSPACE_CONSUMER_SECRET }}
+        TWITTER_CONTEXTSPACE_ACCESS_TOKEN: ${{ secrets.TWITTER_CONTEXTSPACE_ACCESS_TOKEN }}
+        TWITTER_CONTEXTSPACE_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_CONTEXTSPACE_ACCESS_TOKEN_SECRET }}
+        TWITTER_CONTEXTSPACE_BEARER_TOKEN: ${{ secrets.TWITTER_CONTEXTSPACE_BEARER_TOKEN }}
+        
+        # OSS Discoveries账号
+        TWITTER_OSSDISCOVERIES_CONSUMER_KEY: ${{ secrets.TWITTER_OSSDISCOVERIES_CONSUMER_KEY }}
+        TWITTER_OSSDISCOVERIES_CONSUMER_SECRET: ${{ secrets.TWITTER_OSSDISCOVERIES_CONSUMER_SECRET }}
+        TWITTER_OSSDISCOVERIES_ACCESS_TOKEN: ${{ secrets.TWITTER_OSSDISCOVERIES_ACCESS_TOKEN }}
+        TWITTER_OSSDISCOVERIES_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_OSSDISCOVERIES_ACCESS_TOKEN_SECRET }}
+        TWITTER_OSSDISCOVERIES_BEARER_TOKEN: ${{ secrets.TWITTER_OSSDISCOVERIES_BEARER_TOKEN }}
+        
+        # AI Flow Watch账号
+        TWITTER_AIFLOWWATCH_CONSUMER_KEY: ${{ secrets.TWITTER_AIFLOWWATCH_CONSUMER_KEY }}
+        TWITTER_AIFLOWWATCH_CONSUMER_SECRET: ${{ secrets.TWITTER_AIFLOWWATCH_CONSUMER_SECRET }}
+        TWITTER_AIFLOWWATCH_ACCESS_TOKEN: ${{ secrets.TWITTER_AIFLOWWATCH_ACCESS_TOKEN }}
+        TWITTER_AIFLOWWATCH_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_AIFLOWWATCH_ACCESS_TOKEN_SECRET }}
+        TWITTER_AIFLOWWATCH_BEARER_TOKEN: ${{ secrets.TWITTER_AIFLOWWATCH_BEARER_TOKEN }}
+        
+        # Open Source Reader账号
+        TWITTER_OPENSOURCEREADER_CONSUMER_KEY: ${{ secrets.TWITTER_OPENSOURCEREADER_CONSUMER_KEY }}
+        TWITTER_OPENSOURCEREADER_CONSUMER_SECRET: ${{ secrets.TWITTER_OPENSOURCEREADER_CONSUMER_SECRET }}
+        TWITTER_OPENSOURCEREADER_ACCESS_TOKEN: ${{ secrets.TWITTER_OPENSOURCEREADER_ACCESS_TOKEN }}
+        TWITTER_OPENSOURCEREADER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_OPENSOURCEREADER_ACCESS_TOKEN_SECRET }}
+        TWITTER_OPENSOURCEREADER_BEARER_TOKEN: ${{ secrets.TWITTER_OPENSOURCEREADER_BEARER_TOKEN }}
+      run: |
+        echo "🧪 测试目标账号连接..."
+        python connect_twitter_multi.py
+    
+
+    
+    - name: 🚀 执行手动推文发布
+      env:
+        # ContextSpace主账号
+        TWITTER_CONTEXTSPACE_CONSUMER_KEY: ${{ secrets.TWITTER_CONTEXTSPACE_CONSUMER_KEY }}
+        TWITTER_CONTEXTSPACE_CONSUMER_SECRET: ${{ secrets.TWITTER_CONTEXTSPACE_CONSUMER_SECRET }}
+        TWITTER_CONTEXTSPACE_ACCESS_TOKEN: ${{ secrets.TWITTER_CONTEXTSPACE_ACCESS_TOKEN }}
+        TWITTER_CONTEXTSPACE_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_CONTEXTSPACE_ACCESS_TOKEN_SECRET }}
+        TWITTER_CONTEXTSPACE_BEARER_TOKEN: ${{ secrets.TWITTER_CONTEXTSPACE_BEARER_TOKEN }}
+        
+        # OSS Discoveries账号
+        TWITTER_OSSDISCOVERIES_CONSUMER_KEY: ${{ secrets.TWITTER_OSSDISCOVERIES_CONSUMER_KEY }}
+        TWITTER_OSSDISCOVERIES_CONSUMER_SECRET: ${{ secrets.TWITTER_OSSDISCOVERIES_CONSUMER_SECRET }}
+        TWITTER_OSSDISCOVERIES_ACCESS_TOKEN: ${{ secrets.TWITTER_OSSDISCOVERIES_ACCESS_TOKEN }}
+        TWITTER_OSSDISCOVERIES_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_OSSDISCOVERIES_ACCESS_TOKEN_SECRET }}
+        TWITTER_OSSDISCOVERIES_BEARER_TOKEN: ${{ secrets.TWITTER_OSSDISCOVERIES_BEARER_TOKEN }}
+        
+        # AI Flow Watch账号
+        TWITTER_AIFLOWWATCH_CONSUMER_KEY: ${{ secrets.TWITTER_AIFLOWWATCH_CONSUMER_KEY }}
+        TWITTER_AIFLOWWATCH_CONSUMER_SECRET: ${{ secrets.TWITTER_AIFLOWWATCH_CONSUMER_SECRET }}
+        TWITTER_AIFLOWWATCH_ACCESS_TOKEN: ${{ secrets.TWITTER_AIFLOWWATCH_ACCESS_TOKEN }}
+        TWITTER_AIFLOWWATCH_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_AIFLOWWATCH_ACCESS_TOKEN_SECRET }}
+        TWITTER_AIFLOWWATCH_BEARER_TOKEN: ${{ secrets.TWITTER_AIFLOWWATCH_BEARER_TOKEN }}
+        
+        # Open Source Reader账号
+        TWITTER_OPENSOURCEREADER_CONSUMER_KEY: ${{ secrets.TWITTER_OPENSOURCEREADER_CONSUMER_KEY }}
+        TWITTER_OPENSOURCEREADER_CONSUMER_SECRET: ${{ secrets.TWITTER_OPENSOURCEREADER_CONSUMER_SECRET }}
+        TWITTER_OPENSOURCEREADER_ACCESS_TOKEN: ${{ secrets.TWITTER_OPENSOURCEREADER_ACCESS_TOKEN }}
+        TWITTER_OPENSOURCEREADER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_OPENSOURCEREADER_ACCESS_TOKEN_SECRET }}
+        TWITTER_OPENSOURCEREADER_BEARER_TOKEN: ${{ secrets.TWITTER_OPENSOURCEREADER_BEARER_TOKEN }}
+      run: |
+        if [ "${{ github.event.inputs.debug_mode }}" = "true" ]; then
+          python manual_publish.py --content "${{ github.event.inputs.tweet_content }}" --account "${{ github.event.inputs.target_account }}" --debug
+        else
+          python manual_publish.py --content "${{ github.event.inputs.tweet_content }}" --account "${{ github.event.inputs.target_account }}"
+        fi
+    
+    - name: 📊 上传执行日志
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: manual-publish-logs-${{ github.run_number }}
+        path: |
+          manual_publish.log
+          twitter_multi_auto.log
+          *.log
+        retention-days: 3
+    
+    - name: 📋 发布结果总结
+      if: always()
+      run: |
+        echo "📋 手动发布结果总结"
+        echo "========================"
+        echo "📄 推文内容: ${{ github.event.inputs.tweet_content }}"
+        echo "📱 目标账号: ${{ github.event.inputs.target_account }}"
+        echo "🐛 调试模式: ${{ github.event.inputs.debug_mode }}"
+        echo "⏰ 执行时间: $(date)"
+        echo "========================"
+        
+        if [ "${{ job.status }}" = "success" ]; then
+          echo "✅ 手动发布任务执行成功"
+        else
+          echo "❌ 手动发布任务执行失败"
+        fi 
