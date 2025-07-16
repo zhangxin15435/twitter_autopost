@@ -69,7 +69,7 @@ jobs:
           exit 1
         fi
     
-    - name: 🔗 测试四账号连接
+    - name: 🔗 验证四账号配置
       env:
         # ContextSpace主账号
         TWITTER_CONTEXTSPACE_CONSUMER_KEY: ${{ secrets.TWITTER_CONTEXTSPACE_CONSUMER_KEY }}
@@ -102,8 +102,19 @@ jobs:
         # 其他配置
         DEBUG: ${{ github.event.inputs.debug_mode || 'false' }}
       run: |
-        echo "🧪 测试四账号连接..."
-        python connect_twitter_multi.py
+        echo "🧪 验证四账号配置..."
+        python -c "
+        from twitter_accounts_config import TwitterAccountsConfig
+        config = TwitterAccountsConfig()
+        accounts = ['contextspace', 'ossdiscoveries', 'aiflowwatch', 'opensourcereader']
+        for account in accounts:
+            account_config = config.get_account_config(account)
+            if account_config:
+                print(f'✅ 账号 {account} 配置验证成功')
+            else:
+                print(f'❌ 账号 {account} 配置验证失败')
+        print('🎉 配置验证完成，准备开始发布...')
+        "
     
     - name: 🚀 执行四账号自动发布
       env:

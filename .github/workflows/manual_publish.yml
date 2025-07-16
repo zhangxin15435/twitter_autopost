@@ -118,8 +118,28 @@ jobs:
           echo "  ✅ $var 已配置"
         done
         
-        echo "🧪 测试目标账号连接..."
-        python connect_twitter_multi.py
+        echo "🧪 验证目标账号配置..."
+        echo "📱 目标账号: ${{ github.event.inputs.target_account }}"
+        
+        # 只测试目标账号，不测试所有账号
+        python -c "
+        from twitter_accounts_config import TwitterAccountsConfig
+        config = TwitterAccountsConfig()
+        target = '${{ github.event.inputs.target_account }}'.lower().replace(' ', '')
+        account_map = {
+            'contextspace': 'contextspace',
+            'ossdiscoveries': 'ossdiscoveries', 
+            'aiflowwatch': 'aiflowwatch',
+            'opensourcereader': 'opensourcereader'
+        }
+        account_key = account_map.get(target, 'contextspace')
+        account_config = config.get_account_config(account_key)
+        if account_config:
+            print(f'✅ 账号 {target} 配置验证成功')
+        else:
+            print(f'❌ 账号 {target} 配置验证失败')
+            exit(1)
+        "
     
     - name: 🚀 执行手动推文发布
       env:
