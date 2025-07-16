@@ -61,7 +61,7 @@ jobs:
           exit 1
         fi
     
-    - name: 🔗 测试账号连接
+    - name: 🔍 调试账号配置
       env:
         # ContextSpace主账号
         TWITTER_CONTEXTSPACE_CONSUMER_KEY: ${{ secrets.TWITTER_CONTEXTSPACE_CONSUMER_KEY }}
@@ -91,6 +91,9 @@ jobs:
         TWITTER_OPENSOURCEREADER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_OPENSOURCEREADER_ACCESS_TOKEN_SECRET }}
         TWITTER_OPENSOURCEREADER_BEARER_TOKEN: ${{ secrets.TWITTER_OPENSOURCEREADER_BEARER_TOKEN }}
       run: |
+        echo "🔍 调试账号配置状态..."
+        python debug_github_actions.py
+        
         echo "🧪 测试目标账号连接..."
         python connect_twitter_multi.py
     

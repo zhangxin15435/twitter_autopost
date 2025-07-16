@@ -53,18 +53,25 @@ class TwitterAccountsConfig:
             
             # 多账号配置（格式：TWITTER_ACCOUNT_NAME_CONSUMER_KEY）
             account_names = set()
+            logger.info("扫描环境变量中的Twitter账号配置...")
             for key in os.environ.keys():
                 if key.startswith('TWITTER_') and key.endswith('_CONSUMER_KEY'):
                     # 提取账号名称
                     account_name = key[8:-13].lower()  # 去掉TWITTER_和_CONSUMER_KEY
                     account_names.add(account_name)
+                    logger.info(f"发现账号环境变量: {key} -> {account_name}")
+            
+            logger.info(f"找到 {len(account_names)} 个账号: {list(account_names)}")
             
             # 为每个账号加载配置
             for account_name in account_names:
+                logger.info(f"尝试加载账号 '{account_name}' 的配置...")
                 account_config = self.get_account_from_env(account_name)
                 if account_config:
                     self.accounts[account_name] = account_config
-                    logger.info(f"加载账号 '{account_name}' 配置成功")
+                    logger.info(f"✅ 加载账号 '{account_name}' 配置成功")
+                else:
+                    logger.warning(f"❌ 加载账号 '{account_name}' 配置失败")
             
         except Exception as e:
             logger.error(f"从环境变量加载账号配置失败: {str(e)}")
@@ -75,11 +82,15 @@ class TwitterAccountsConfig:
             if account_name:
                 # 多账号配置
                 prefix = f"TWITTER_{account_name.upper()}_"
+                logger.info(f"查找环境变量前缀: {prefix}")
                 api_key = os.getenv(f"{prefix}CONSUMER_KEY")
                 api_secret = os.getenv(f"{prefix}CONSUMER_SECRET")
                 access_token = os.getenv(f"{prefix}ACCESS_TOKEN")
                 access_token_secret = os.getenv(f"{prefix}ACCESS_TOKEN_SECRET")
                 bearer_token = os.getenv(f"{prefix}BEARER_TOKEN")
+                
+                # 调试输出
+                logger.info(f"API密钥状态: key={'✅' if api_key else '❌'}, secret={'✅' if api_secret else '❌'}, token={'✅' if access_token else '❌'}, token_secret={'✅' if access_token_secret else '❌'}")
             else:
                 # 默认账号配置
                 api_key = os.getenv('TWITTER_CONSUMER_KEY')
@@ -89,6 +100,12 @@ class TwitterAccountsConfig:
                 bearer_token = os.getenv('TWITTER_BEARER_TOKEN')
             
             if not all([api_key, api_secret, access_token, access_token_secret]):
+                missing = []
+                if not api_key: missing.append("CONSUMER_KEY")
+                if not api_secret: missing.append("CONSUMER_SECRET") 
+                if not access_token: missing.append("ACCESS_TOKEN")
+                if not access_token_secret: missing.append("ACCESS_TOKEN_SECRET")
+                logger.warning(f"账号 '{account_name or 'default'}' 配置不完整，缺少: {', '.join(missing)}")
                 return None
             
             return {
@@ -165,16 +182,25 @@ class TwitterAccountsConfig:
         
         # 标准化账号名称
         normalized_name = account_name.lower().strip()
+        logger.info(f"查找账号配置: '{account_name}' -> 标准化: '{normalized_name}'")
+        logger.info(f"当前可用账号: {list(self.accounts.keys())}")
         
         # 尝试直接匹配
         if normalized_name in self.accounts:
+            logger.info(f"直接匹配成功: '{normalized_name}'")
             return self.accounts[normalized_name]
         
         # 尝试映射匹配
         if normalized_name in account_mapping:
             mapped_name = account_mapping[normalized_name]
+            logger.info(f"账号映射: '{normalized_name}' -> '{mapped_name}'")
             if mapped_name in self.accounts:
+                logger.info(f"映射匹配成功: '{mapped_name}'")
                 return self.accounts[mapped_name]
+            else:
+                logger.warning(f"映射失败: '{mapped_name}' 不在可用账号中")
+        else:
+            logger.warning(f"无映射规则: '{normalized_name}' 不在映射表中")
         
         # 尝试默认账号（ContextSpace主账号）
         if 'contextspace' in self.accounts:
