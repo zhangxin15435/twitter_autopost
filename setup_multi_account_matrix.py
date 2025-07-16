@@ -20,37 +20,37 @@ class MultiAccountMatrixSetup:
     def __init__(self):
         self.account_manager = TwitterAccountManager()
         self.recommended_accounts = {
+            'contextspace': {
+                'display_name': '@ContextSpace',
+                'description': '主账号，综合内容发布',
+                'target_audience': '综合受众、订阅用户',
+                'content_types': ['twitter', 'contextspace', '综合内容'],
+                'posting_frequency': '每日2-3条',
+                'best_time': '每天 20:00-22:00'
+            },
+            'ossdiscoveries': {
+                'display_name': '@OSSDiscoveries',
+                'description': '开源工具发现、设计工具',
+                'target_audience': '设计师、工具用户、开发者',
+                'content_types': ['oss discoveries'],
+                'posting_frequency': '每日1条',
+                'best_time': '周末 10:00-12:00'
+            },
             'aiflowwatch': {
                 'display_name': '@AIFlowWatch',
-                'description': 'AI技术、RAG、Agents、LLM工作流',
+                'description': 'AI技术、机器学习、工作流',
                 'target_audience': 'AI开发者、技术专家',
                 'content_types': ['ai flow watch'],
                 'posting_frequency': '每日1-2条',
                 'best_time': '工作日 09:00-11:00'
             },
-            'opensourceradar': {
-                'display_name': '@OpenSourceRadar', 
-                'description': '开源项目介绍、技术评测',
-                'target_audience': '开发者、开源贡献者',
-                'content_types': ['OpenSource Radar'],
+            'opensourcereader': {
+                'display_name': '@OpenSourceReader',
+                'description': '开源项目介绍、技术评测、文档解读',
+                'target_audience': '开发者、开源贡献者、技术阅读者',
+                'content_types': ['open source reader'],
                 'posting_frequency': '每日1条',
                 'best_time': '工作日 14:00-16:00'
-            },
-            'ossdiscoveries': {
-                'display_name': '@OSSDiscoveries',
-                'description': '开源工具发现、设计工具',
-                'target_audience': '设计师、工具用户',
-                'content_types': ['oss discoveries'],
-                'posting_frequency': '隔日1条', 
-                'best_time': '周末 10:00-12:00'
-            },
-            'default': {
-                'display_name': '@YourMainAccount',
-                'description': '综合内容、个人观点',
-                'target_audience': '综合受众',
-                'content_types': ['twitter', '其他'],
-                'posting_frequency': '每日1条',
-                'best_time': '每天 20:00-22:00'
             }
         }
     
@@ -130,29 +130,40 @@ class MultiAccountMatrixSetup:
         if not missing_accounts:
             return
         
-        print("📝 生成配置模板")
+        print("📝 生成四个账号配置模板")
         print("-" * 40)
         print("请将以下配置添加到您的 .env 文件或 GitHub Secrets：")
         print()
         
+        account_configs = {
+            'contextspace': {
+                'name': 'ContextSpace主账号',
+                'prefix': 'CONTEXTSPACE'
+            },
+            'ossdiscoveries': {
+                'name': 'OSS Discoveries账号',
+                'prefix': 'OSSDISCOVERIES'
+            },
+            'aiflowwatch': {
+                'name': 'AI Flow Watch账号',
+                'prefix': 'AIFLOWWATCH'
+            },
+            'opensourcereader': {
+                'name': 'Open Source Reader账号',
+                'prefix': 'OPENSOURCEREADER'
+            }
+        }
+        
         for account in missing_accounts:
-            if account == 'default':
-                print("# 默认账号配置")
-                print("TWITTER_CONSUMER_KEY=your_main_consumer_key")
-                print("TWITTER_CONSUMER_SECRET=your_main_consumer_secret") 
-                print("TWITTER_ACCESS_TOKEN=your_main_access_token")
-                print("TWITTER_ACCESS_TOKEN_SECRET=your_main_access_token_secret")
-                print("TWITTER_BEARER_TOKEN=your_main_bearer_token")
-            else:
-                account_upper = account.upper()
-                account_info = self.recommended_accounts[account]
-                print(f"# {account_info['display_name']} 配置")
-                print(f"TWITTER_{account_upper}_CONSUMER_KEY={account}_consumer_key")
-                print(f"TWITTER_{account_upper}_CONSUMER_SECRET={account}_consumer_secret")
-                print(f"TWITTER_{account_upper}_ACCESS_TOKEN={account}_access_token")
-                print(f"TWITTER_{account_upper}_ACCESS_TOKEN_SECRET={account}_access_token_secret")
-                print(f"TWITTER_{account_upper}_BEARER_TOKEN={account}_bearer_token")
-            print()
+            if account in account_configs:
+                config = account_configs[account]
+                print(f"# {config['name']}")
+                print(f"TWITTER_{config['prefix']}_CONSUMER_KEY={account}_consumer_key")
+                print(f"TWITTER_{config['prefix']}_CONSUMER_SECRET={account}_consumer_secret")
+                print(f"TWITTER_{config['prefix']}_ACCESS_TOKEN={account}_access_token")
+                print(f"TWITTER_{config['prefix']}_ACCESS_TOKEN_SECRET={account}_access_token_secret")
+                print(f"TWITTER_{config['prefix']}_BEARER_TOKEN={account}_bearer_token")
+                print()
     
     def test_single_account_mode(self):
         """测试单账号模式"""

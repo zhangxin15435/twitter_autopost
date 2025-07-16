@@ -38,17 +38,20 @@ jobs:
         # 检查Python语法
         python -m py_compile main.py
         python -m py_compile connect_twitter.py
-        python -m py_compile connect_feishu.py
+        python -m py_compile main_multi_account.py
+        python -m py_compile main_csv.py
+        python -m py_compile main_content_folder.py
         python -m py_compile connect_csv.py
         python -m py_compile show_content_source.py
     
     - name: 导入测试
       run: |
         # 测试模块导入
-        python -c "import main; print('main.py 导入成功')"
         python -c "import connect_twitter; print('connect_twitter.py 导入成功')"
-        python -c "import connect_feishu; print('connect_feishu.py 导入成功')"
         python -c "import connect_csv; print('connect_csv.py 导入成功')"
+        python -c "import main_multi_account; print('main_multi_account.py 导入成功')"
+        python -c "import main_csv; print('main_csv.py 导入成功')"
+        python -c "import main_content_folder; print('main_content_folder.py 导入成功')"
     
     - name: 配置文件检查
       run: |
@@ -65,5 +68,13 @@ jobs:
           echo "✅ 依赖文件存在"
         else
           echo "❌ 依赖文件不存在"
+          exit 1
+        fi
+        
+        # 检查content目录
+        if [ -d "content" ]; then
+          echo "✅ content目录存在"
+        else
+          echo "❌ content目录不存在"
           exit 1
         fi 

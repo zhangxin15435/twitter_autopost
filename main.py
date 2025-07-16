@@ -1,24 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-飞书文章自动发布到Twitter的主程序
-从飞书多维表格获取文章内容，自动发布到Twitter
+Twitter自动发布主程序
+从CSV文件读取内容并自动发布到Twitter，支持多账号发布
 """
 
 import os
 import sys
-import time
 import logging
 from datetime import datetime
 from typing import Optional, Dict
-from dotenv import load_dotenv
 
-# 导入自定义模块
-from connect_feishu import FeishuAPI
-from connect_twitter import TwitterAPI
-
-# 加载环境变量
-load_dotenv()
+# 导入多账号发布模块
+try:
+    from main_multi_account import MultiAccountTwitterPublisher
+except ImportError:
+    print("❌ 无法导入多账号发布模块，请检查文件是否存在")
+    sys.exit(1)
 
 # 配置日志
 logging.basicConfig(
@@ -32,99 +30,70 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class TwitterAutoBot:
-    """Twitter自动发布机器人"""
+    """Twitter自动发布机器人 - 纯Twitter版本"""
     
     def __init__(self):
         """初始化机器人"""
-        self.feishu = None
-        self.twitter = None
+        self.publisher = MultiAccountTwitterPublisher()
         self.debug = os.getenv('DEBUG', 'False').lower() == 'true'
         
-        # 初始化API连接
-        self._init_apis()
-    
-    def _init_apis(self):
-        """初始化API连接"""
-        try:
-            # 初始化飞书API
-            self.feishu = FeishuAPI()
-            logger.info("飞书API初始化成功")
-            
-            # 初始化Twitter API
-            self.twitter = TwitterAPI()
-            logger.info("Twitter API初始化成功")
-            
-            # 测试连接
-            if not self.test_connections():
-                raise Exception("API连接测试失败")
-                
-        except Exception as e:
-            logger.error(f"初始化API时发生错误: {str(e)}")
-            raise
+        logger.info("Twitter自动发布机器人初始化完成（纯Twitter版本）")
     
     def test_connections(self) -> bool:
-        """测试API连接"""
+        """测试Twitter连接"""
         try:
-            # 测试飞书连接
-            feishu_test = self.feishu.get_access_token()
-            if not feishu_test:
-                logger.error("飞书API连接失败")
+            # 测试多账号配置
+            results = self.publisher.test_all_accounts()
+            
+            success_count = sum(1 for result in results.values() if result.get('status') == 'success')
+            total_count = len(results)
+            
+            logger.info(f"Twitter账号连接测试: {success_count}/{total_count} 个账号连接成功")
+            
+            if success_count > 0:
+                logger.info("✅ 至少有一个Twitter账号可用")
+                return True
+            else:
+                logger.error("❌ 没有可用的Twitter账号")
                 return False
-            
-            # 测试Twitter连接
-            twitter_test = self.twitter.test_connection()
-            if not twitter_test:
-                logger.error("Twitter API连接失败")
-                return False
-            
-            logger.info("所有API连接测试通过")
-            return True
-            
+                
         except Exception as e:
-            logger.error(f"测试API连接时发生错误: {str(e)}")
+            logger.error(f"测试Twitter连接时发生错误: {str(e)}")
             return False
     
-    def get_article_from_feishu(self) -> Optional[Dict]:
-        """从飞书获取文章内容"""
+    def get_next_article(self) -> Optional[Dict]:
+        """获取下一篇待发布的文章"""
         try:
-            article = self.feishu.get_article_content()
+            article = self.publisher.get_next_article()
             if article:
-                logger.info(f"从飞书获取文章成功: {article.get('title', 'Unknown')}")
+                logger.info(f"获取文章成功: {article.get('title', 'Unknown')}")
                 return article
             else:
                 logger.warning("没有可用的文章内容")
                 return None
                 
         except Exception as e:
-            logger.error(f"从飞书获取文章时发生错误: {str(e)}")
+            logger.error(f"获取文章时发生错误: {str(e)}")
             return None
     
     def publish_to_twitter(self, article_data: Dict) -> bool:
         """发布文章到Twitter"""
         try:
-            # 格式化推文内容
-            tweet_content = self.twitter.format_tweet_content(article_data)
-            
             if self.debug:
-                logger.info(f"调试模式 - 推文内容:\n{tweet_content}")
-                logger.info(f"推文长度: {len(tweet_content)} 字符")
+                logger.info(f"调试模式 - 文章内容:")
+                logger.info(f"  标题: {article_data.get('title', 'Unknown')}")
+                logger.info(f"  发布账号: {article_data.get('publish_account', 'default')}")
+                logger.info(f"  内容: {article_data.get('content', '')[:100]}...")
                 return True
             
             # 发布推文
-            tweet_result = self.twitter.create_tweet(tweet_content)
+            success = self.publisher.publish_article(article_data)
             
-            if tweet_result:
-                logger.info(f"推文发布成功: {tweet_result.get('url', 'Unknown')}")
-                
-                # 标记文章为已发布
-                record_id = article_data.get('record_id')
-                if record_id:
-                    self.feishu.mark_as_published(record_id)
-                    logger.info(f"文章 {record_id} 已标记为已发布")
-                
+            if success:
+                logger.info("✅ 推文发布成功")
                 return True
             else:
-                logger.error("推文发布失败")
+                logger.error("❌ 推文发布失败")
                 return False
                 
         except Exception as e:
@@ -134,10 +103,10 @@ class TwitterAutoBot:
     def run_once(self) -> bool:
         """执行一次发布任务"""
         try:
-            logger.info("开始执行发布任务")
+            logger.info("🚀 开始执行发布任务")
             
             # 获取文章内容
-            article = self.get_article_from_feishu()
+            article = self.get_next_article()
             if not article:
                 logger.warning("没有可发布的文章")
                 return False
@@ -146,10 +115,10 @@ class TwitterAutoBot:
             success = self.publish_to_twitter(article)
             
             if success:
-                logger.info("发布任务完成")
+                logger.info("✅ 发布任务完成")
                 return True
             else:
-                logger.error("发布任务失败")
+                logger.error("❌ 发布任务失败")
                 return False
                 
         except Exception as e:
@@ -162,12 +131,13 @@ class TwitterAutoBot:
             logger.info("=" * 50)
             logger.info(f"定时任务开始 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             
-            success = self.run_once()
+            # 使用多账号发布器执行任务
+            success = self.publisher.run_once()
             
             if success:
-                logger.info("定时任务执行成功")
+                logger.info("✅ 定时任务执行成功")
             else:
-                logger.error("定时任务执行失败")
+                logger.error("❌ 定时任务执行失败")
             
             logger.info("=" * 50)
             
@@ -177,25 +147,19 @@ class TwitterAutoBot:
     def get_status(self) -> Dict:
         """获取机器人状态"""
         try:
+            # 获取统计信息
+            stats = self.publisher.get_statistics()
+            
+            # 获取账号状态
+            account_results = self.publisher.test_all_accounts()
+            
             status = {
                 'timestamp': datetime.now().isoformat(),
-                'feishu_connected': False,
-                'twitter_connected': False,
-                'debug_mode': self.debug
+                'platform': 'Twitter Only',
+                'debug_mode': self.debug,
+                'content_stats': stats,
+                'accounts': account_results
             }
-            
-            # 检查飞书连接
-            try:
-                self.feishu.get_access_token()
-                status['feishu_connected'] = True
-            except:
-                pass
-            
-            # 检查Twitter连接
-            try:
-                status['twitter_connected'] = self.twitter.test_connection()
-            except:
-                pass
             
             return status
             
@@ -218,37 +182,50 @@ def main():
         
         if command == 'test':
             # 测试模式
-            logger.info("运行测试模式")
+            logger.info("🧪 运行测试模式")
             
             # 测试连接
             if bot.test_connections():
-                print("✅ API连接测试通过")
+                print("✅ Twitter API连接测试通过")
             else:
-                print("❌ API连接测试失败")
+                print("❌ Twitter API连接测试失败")
                 return
             
             # 测试获取文章
-            article = bot.get_article_from_feishu()
+            article = bot.get_next_article()
             if article:
                 print(f"✅ 成功获取文章: {article.get('title', 'Unknown')}")
-                
-                # 测试格式化推文
-                tweet_content = bot.twitter.format_tweet_content(article)
-                print(f"✅ 推文内容预览:\n{tweet_content}")
-                print(f"✅ 推文长度: {len(tweet_content)} 字符")
+                print(f"📝 发布账号: {article.get('publish_account', 'default')}")
+                print(f"👤 作者: {article.get('author', 'Unknown')}")
+                print(f"📄 内容预览: {article.get('content', '')[:100]}...")
             else:
                 print("❌ 无法获取文章")
         
         elif command == 'status':
             # 状态查看
             status = bot.get_status()
-            print("机器人状态:")
-            for key, value in status.items():
-                print(f"  {key}: {value}")
+            print("📊 机器人状态:")
+            print(f"  平台: {status.get('platform', 'Unknown')}")
+            print(f"  调试模式: {status.get('debug_mode', False)}")
+            
+            stats = status.get('content_stats', {})
+            if stats:
+                print(f"📈 内容统计:")
+                print(f"  总数: {stats.get('total', 0)}")
+                print(f"  已发布: {stats.get('published', 0)}")
+                print(f"  待发布: {stats.get('unpublished', 0)}")
+            
+            accounts = status.get('accounts', {})
+            if accounts:
+                print(f"🔗 账号状态:")
+                for account, result in accounts.items():
+                    status_icon = "✅" if result.get('status') == 'success' else "❌"
+                    username = result.get('username', 'unknown')
+                    print(f"  {status_icon} {account}: @{username}")
         
         elif command == 'run':
             # 执行一次发布
-            logger.info("执行单次发布任务")
+            logger.info("🚀 执行单次发布任务")
             success = bot.run_once()
             if success:
                 print("✅ 发布任务完成")
@@ -260,8 +237,12 @@ def main():
             bot.run_scheduled()
         
         else:
-            print(f"未知命令: {command}")
-            print("可用命令: test, status, run, schedule")
+            print(f"❌ 未知命令: {command}")
+            print("📋 可用命令:")
+            print("  test     - 测试连接和获取文章")
+            print("  status   - 查看机器人状态")
+            print("  run      - 执行单次发布")
+            print("  schedule - 定时任务模式")
     
     except KeyboardInterrupt:
         logger.info("程序被用户中断")

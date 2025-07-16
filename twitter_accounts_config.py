@@ -142,12 +142,25 @@ class TwitterAccountsConfig:
     
     def get_account_config(self, account_name: str) -> Optional[Dict]:
         """获取指定账号的配置"""
-        # 账号名称映射
+        # 账号名称映射 - 更新为用户需要的四个账号
         account_mapping = {
-            'ai flow watch': 'aiflowwatch',
-            'opensource radar': 'opensourceradar',
+            # 主账号 - ContextSpace
+            'contextspace': 'contextspace',
+            'context space': 'contextspace',
+            'twitter': 'contextspace',  # 默认映射到ContextSpace主账号
+            
+            # OSS Discoveries
             'oss discoveries': 'ossdiscoveries',
-            'twitter': 'default'
+            'ossdiscoveries': 'ossdiscoveries',
+            
+            # AI Flow Watch
+            'ai flow watch': 'aiflowwatch',
+            'aiflowwatch': 'aiflowwatch',
+            
+            # Open Source Reader
+            'open source reader': 'opensourcereader',
+            'opensource reader': 'opensourcereader',
+            'opensourcereader': 'opensourcereader',
         }
         
         # 标准化账号名称
@@ -163,7 +176,12 @@ class TwitterAccountsConfig:
             if mapped_name in self.accounts:
                 return self.accounts[mapped_name]
         
-        # 尝试默认账号
+        # 尝试默认账号（ContextSpace主账号）
+        if 'contextspace' in self.accounts:
+            logger.warning(f"账号 '{account_name}' 配置未找到，使用ContextSpace主账号")
+            return self.accounts['contextspace']
+        
+        # 向后兼容：尝试default账号
         if 'default' in self.accounts:
             logger.warning(f"账号 '{account_name}' 配置未找到，使用默认账号")
             return self.accounts['default']
@@ -220,40 +238,50 @@ def setup_account_mapping():
     
     if not accounts_info:
         print("   未找到任何账号配置")
-        print("\n💡 配置方法:")
-        print("   1. 环境变量配置（推荐）:")
-        print("      TWITTER_CONSUMER_KEY=your_key")
-        print("      TWITTER_CONSUMER_SECRET=your_secret")
-        print("      TWITTER_ACCESS_TOKEN=your_token")
-        print("      TWITTER_ACCESS_TOKEN_SECRET=your_token_secret")
-        print("      TWITTER_BEARER_TOKEN=your_bearer_token")
+        print("\n💡 四个账号配置方法:")
+        print("   📱 1. ContextSpace主账号:")
+        print("      TWITTER_CONTEXTSPACE_CONSUMER_KEY=contextspace_key")
+        print("      TWITTER_CONTEXTSPACE_CONSUMER_SECRET=contextspace_secret")
+        print("      TWITTER_CONTEXTSPACE_ACCESS_TOKEN=contextspace_token")
+        print("      TWITTER_CONTEXTSPACE_ACCESS_TOKEN_SECRET=contextspace_token_secret")
+        print("      TWITTER_CONTEXTSPACE_BEARER_TOKEN=contextspace_bearer")
         print("")
-        print("   2. 多账号配置:")
-        print("      TWITTER_AIFLOWWATCH_CONSUMER_KEY=key1")
-        print("      TWITTER_AIFLOWWATCH_CONSUMER_SECRET=secret1")
-        print("      TWITTER_AIFLOWWATCH_ACCESS_TOKEN=token1")
-        print("      TWITTER_AIFLOWWATCH_ACCESS_TOKEN_SECRET=token_secret1")
-        print("      TWITTER_AIFLOWWATCH_BEARER_TOKEN=bearer1")
+        print("   📱 2. OSS Discoveries账号:")
+        print("      TWITTER_OSSDISCOVERIES_CONSUMER_KEY=oss_key")
+        print("      TWITTER_OSSDISCOVERIES_CONSUMER_SECRET=oss_secret")
+        print("      TWITTER_OSSDISCOVERIES_ACCESS_TOKEN=oss_token")
+        print("      TWITTER_OSSDISCOVERIES_ACCESS_TOKEN_SECRET=oss_token_secret")
+        print("      TWITTER_OSSDISCOVERIES_BEARER_TOKEN=oss_bearer")
         print("")
-        print("      TWITTER_OPENSOURCERADAR_CONSUMER_KEY=key2")
-        print("      TWITTER_OPENSOURCERADAR_CONSUMER_SECRET=secret2")
-        print("      ...")
+        print("   📱 3. AI Flow Watch账号:")
+        print("      TWITTER_AIFLOWWATCH_CONSUMER_KEY=ai_key")
+        print("      TWITTER_AIFLOWWATCH_CONSUMER_SECRET=ai_secret")
+        print("      TWITTER_AIFLOWWATCH_ACCESS_TOKEN=ai_token")
+        print("      TWITTER_AIFLOWWATCH_ACCESS_TOKEN_SECRET=ai_token_secret")
+        print("      TWITTER_AIFLOWWATCH_BEARER_TOKEN=ai_bearer")
+        print("")
+        print("   📱 4. Open Source Reader账号:")
+        print("      TWITTER_OPENSOURCEREADER_CONSUMER_KEY=reader_key")
+        print("      TWITTER_OPENSOURCEREADER_CONSUMER_SECRET=reader_secret")
+        print("      TWITTER_OPENSOURCEREADER_ACCESS_TOKEN=reader_token")
+        print("      TWITTER_OPENSOURCEREADER_ACCESS_TOKEN_SECRET=reader_token_secret")
+        print("      TWITTER_OPENSOURCEREADER_BEARER_TOKEN=reader_bearer")
         return
     
     for account_name, info in accounts_info.items():
         status = "✅ 已配置" if info['configured'] else "❌ 配置不完整"
         print(f"   {account_name}: {status}")
     
-    print("\n🔄 账号映射:")
-    print("   表格中的'发布账号' → 实际Twitter账号")
-    print("   'ai flow watch' → aiflowwatch")
-    print("   'OpenSource Radar' → opensourceradar")
-    print("   'oss discoveries' → ossdiscoveries")
-    print("   'twitter' → default")
+    print("\n🔄 账号映射规则:")
+    print("   CSV表格中的'发布账号' → 实际Twitter账号")
+    print("   'ContextSpace' 或 'twitter' → @ContextSpace主账号")
+    print("   'OSS Discoveries' → @OSSDiscoveries")
+    print("   'Ai flow watch' → @AIFlowWatch")
+    print("   'Open source reader' → @OpenSourceReader")
     
     # 测试账号配置
-    print("\n🧪 测试账号配置:")
-    test_accounts = ['ai flow watch', 'OpenSource Radar', 'oss discoveries', 'twitter']
+    print("\n🧪 测试四个账号配置:")
+    test_accounts = ['ContextSpace', 'OSS Discoveries', 'Ai flow watch', 'Open source reader']
     
     for test_account in test_accounts:
         config = config_manager.get_account_config(test_account)

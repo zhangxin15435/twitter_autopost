@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: '执行的操作'
+        description: '选择要执行的操作'
         required: true
         default: 'run'
         type: choice
@@ -50,12 +50,6 @@ jobs:
         TWITTER_ACCESS_TOKEN_SECRET=${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
         TWITTER_BEARER_TOKEN=${{ secrets.TWITTER_BEARER_TOKEN }}
         
-        # 飞书API配置
-        FEISHU_APP_ID=${{ secrets.FEISHU_APP_ID }}
-        FEISHU_APP_SECRET=${{ secrets.FEISHU_APP_SECRET }}
-        FEISHU_BITABLE_TOKEN=${{ secrets.FEISHU_BITABLE_TOKEN }}
-        FEISHU_TABLE_ID=${{ secrets.FEISHU_TABLE_ID }}
-        
         # 其他配置
         TIMEZONE=Asia/Shanghai
         DEBUG=${{ github.event.inputs.debug_mode || 'false' }}
@@ -65,10 +59,18 @@ jobs:
       run: |
         python main.py ${{ github.event.inputs.action }}
     
+    - name: 提交更新的内容文件（如果有发布操作）
+      if: github.event.inputs.action == 'run'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add content/
+        git diff --staged --quiet || (git commit -m "🤖 手动发布更新 - $(date '+%Y-%m-%d %H:%M:%S')" && git push)
+    
     - name: 上传日志文件
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: twitter-bot-logs-manual-${{ github.run_number }}
+        name: manual-publish-logs-${{ github.run_number }}
         path: twitter_auto_bot.log
         retention-days: 7 
