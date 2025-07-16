@@ -1,23 +1,9 @@
-name: Twitter多账号自动发布
+name: Twitter每日自动发布
 
 on:
   schedule:
-    # 每天UTC时间12:00运行（北京时间20:00）
+    # 每天北京时间20:00自动发布 (UTC 12:00)
     - cron: '0 12 * * *'
-    
-    # === 可自定义多个发布时间 ===
-    # AI Flow Watch: 工作日上午 (北京时间10:00 = UTC 02:00)
-    # - cron: '0 2 * * 1-5'
-    
-    # OpenSource Radar: 工作日下午 (北京时间15:00 = UTC 07:00)  
-    # - cron: '0 7 * * 1-5'
-    
-    # OSS Discoveries: 周末上午 (北京时间11:00 = UTC 03:00)
-    # - cron: '0 3 * * 6'
-    
-    # 主账号: 每天晚上 (北京时间21:00 = UTC 13:00)
-    # - cron: '0 13 * * *'
-    
   # 允许手动触发
   workflow_dispatch:
 
@@ -46,7 +32,7 @@ jobs:
         echo "CSV文件行数："
         wc -l content/*.csv
     
-    - name: 测试多账号配置
+    - name: 执行四账号自动发布
       env:
         # ContextSpace主账号配置
         TWITTER_CONTEXTSPACE_CONSUMER_KEY: ${{ secrets.TWITTER_CONTEXTSPACE_CONSUMER_KEY }}
@@ -76,56 +62,23 @@ jobs:
         TWITTER_OPENSOURCEREADER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_OPENSOURCEREADER_ACCESS_TOKEN_SECRET }}
         TWITTER_OPENSOURCEREADER_BEARER_TOKEN: ${{ secrets.TWITTER_OPENSOURCEREADER_BEARER_TOKEN }}
       run: |
-        echo "测试四个账号配置..."
-        python connect_twitter_multi.py
-    
-    - name: 运行多账号自动发布
-      env:
-        # ContextSpace主账号配置
-        TWITTER_CONTEXTSPACE_CONSUMER_KEY: ${{ secrets.TWITTER_CONTEXTSPACE_CONSUMER_KEY }}
-        TWITTER_CONTEXTSPACE_CONSUMER_SECRET: ${{ secrets.TWITTER_CONTEXTSPACE_CONSUMER_SECRET }}
-        TWITTER_CONTEXTSPACE_ACCESS_TOKEN: ${{ secrets.TWITTER_CONTEXTSPACE_ACCESS_TOKEN }}
-        TWITTER_CONTEXTSPACE_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_CONTEXTSPACE_ACCESS_TOKEN_SECRET }}
-        TWITTER_CONTEXTSPACE_BEARER_TOKEN: ${{ secrets.TWITTER_CONTEXTSPACE_BEARER_TOKEN }}
-        
-        # OSS Discoveries账号配置
-        TWITTER_OSSDISCOVERIES_CONSUMER_KEY: ${{ secrets.TWITTER_OSSDISCOVERIES_CONSUMER_KEY }}
-        TWITTER_OSSDISCOVERIES_CONSUMER_SECRET: ${{ secrets.TWITTER_OSSDISCOVERIES_CONSUMER_SECRET }}
-        TWITTER_OSSDISCOVERIES_ACCESS_TOKEN: ${{ secrets.TWITTER_OSSDISCOVERIES_ACCESS_TOKEN }}
-        TWITTER_OSSDISCOVERIES_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_OSSDISCOVERIES_ACCESS_TOKEN_SECRET }}
-        TWITTER_OSSDISCOVERIES_BEARER_TOKEN: ${{ secrets.TWITTER_OSSDISCOVERIES_BEARER_TOKEN }}
-        
-        # AI Flow Watch账号配置
-        TWITTER_AIFLOWWATCH_CONSUMER_KEY: ${{ secrets.TWITTER_AIFLOWWATCH_CONSUMER_KEY }}
-        TWITTER_AIFLOWWATCH_CONSUMER_SECRET: ${{ secrets.TWITTER_AIFLOWWATCH_CONSUMER_SECRET }}
-        TWITTER_AIFLOWWATCH_ACCESS_TOKEN: ${{ secrets.TWITTER_AIFLOWWATCH_ACCESS_TOKEN }}
-        TWITTER_AIFLOWWATCH_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_AIFLOWWATCH_ACCESS_TOKEN_SECRET }}
-        TWITTER_AIFLOWWATCH_BEARER_TOKEN: ${{ secrets.TWITTER_AIFLOWWATCH_BEARER_TOKEN }}
-        
-        # Open Source Reader账号配置
-        TWITTER_OPENSOURCEREADER_CONSUMER_KEY: ${{ secrets.TWITTER_OPENSOURCEREADER_CONSUMER_KEY }}
-        TWITTER_OPENSOURCEREADER_CONSUMER_SECRET: ${{ secrets.TWITTER_OPENSOURCEREADER_CONSUMER_SECRET }}
-        TWITTER_OPENSOURCEREADER_ACCESS_TOKEN: ${{ secrets.TWITTER_OPENSOURCEREADER_ACCESS_TOKEN }}
-        TWITTER_OPENSOURCEREADER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_OPENSOURCEREADER_ACCESS_TOKEN_SECRET }}
-        TWITTER_OPENSOURCEREADER_BEARER_TOKEN: ${{ secrets.TWITTER_OPENSOURCEREADER_BEARER_TOKEN }}
-      run: |
-        echo "开始执行四账号自动发布任务..."
+        echo "开始执行每日自动发布..."
         python main_multi_account.py
-        echo "四账号发布任务完成"
+        echo "每日发布任务完成"
     
     - name: 提交更新的内容文件
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add content/
-        git diff --staged --quiet || (git commit -m "🤖 多账号自动更新发布状态 - $(date '+%Y-%m-%d %H:%M:%S')" && git push)
+        git diff --staged --quiet || (git commit -m "🤖 每日自动发布更新 - $(date '+%Y-%m-%d %H:%M:%S')" && git push)
     
     - name: 上传日志文件
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: twitter-multi-auto-logs
+        name: twitter-auto-logs
         path: |
           twitter_multi_auto.log
           *.log
-        retention-days: 30 
+        retention-days: 7 
