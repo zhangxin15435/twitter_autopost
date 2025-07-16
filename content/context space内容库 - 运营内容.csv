@@ -1,7 +1,7 @@
 "﻿""内容主题""",提出人,发布账号,拟发布日期,主题分类,内容形式,状态,是否审核@Jorie（每天 20:00）,是否发布,地址,数据分析,父记录
 "Welcome to AIFlowWatch! I’ll share what I learn building with RAG, agents, and generative pipelines—plus Big Tech moves worth watching. If you care about AI workflows beyond cool demos, stick around. Let’s navigate this together. #AIcommunity",张曦月,ai flow watch,2025/06/27,干货洞察,纯文字,,,是,,,
 "AI agents are here: they plan, call APIs, and execute tasks autonomously. Projects like AutoGen & CrewAI show agents are more than hype. Real products are being built today. #AIagents",张曦月,ai flow watch,2025/06/27,,,,,是,,,
-"RAG ≠ magic. If your index is outdated, your answers will be too. Always monitor your embeddings & refresh your knowledge base. Production RAG needs ops discipline. #LLMops",张曦月,ai flow watch,2025/06/28,,,,,否,,,
+"RAG ≠ magic. If your index is outdated, your answers will be too. Always monitor your embeddings & refresh your knowledge base. Production RAG needs ops discipline. #LLMops",张曦月,ai flow watch,2025/06/28,,,,,是,,,
 "Fine-tuning vs. RAG? Fine-tuning bakes knowledge into weights, great for fixed domains. RAG keeps info fresh & dynamic. Choose wisely: use both if you can. #AI",张曦月,ai flow watch,2025/06/28,,,,,否,,,
 "OpenAI’s rumored GPT-5, Google’s Gemini updates, and Meta’s new open-source agents—all in the last 30 days. The pace of AI innovation has never been faster. #AInews",张曦月,ai flow watch,2025/06/29,,,,,否,,,
 "Generative AI workflows need orchestration: memory, planning, and evaluation. Prompt chaining isn’t enough. Next-gen apps require proper pipelines. #AIworkflows",张曦月,ai flow watch,2025/06/29,,,,,否,,,

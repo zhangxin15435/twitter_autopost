@@ -27,16 +27,28 @@ logger = logging.getLogger(__name__)
 class MultiAccountTwitterPublisher:
     """多账号Twitter发布器"""
     
-    def __init__(self, content_folder: str = "content"):
-        """初始化发布器"""
+    def __init__(self, content_folder: str = "content", excluded_accounts: List[str] = None):
+        """
+        初始化发布器
+        
+        Args:
+            content_folder: 内容文件夹路径
+            excluded_accounts: 暂时排除的账号列表
+        """
         self.content_folder = content_folder
         self.account_manager = TwitterAccountManager()
         self.current_data = []
         
+        # 暂时排除的账号列表
+        self.excluded_accounts = excluded_accounts or []
+        
         # 支持的文件格式
         self.supported_formats = ['.csv']
         
-        logger.info(f"多账号Twitter发布器初始化完成")
+        if self.excluded_accounts:
+            logger.info(f"多账号Twitter发布器初始化完成 (排除账号: {', '.join(self.excluded_accounts)})")
+        else:
+            logger.info(f"多账号Twitter发布器初始化完成")
     
     def load_content_data(self) -> List[Dict]:
         """加载content文件夹中的数据"""
@@ -148,6 +160,11 @@ class MultiAccountTwitterPublisher:
                 if not account:
                     account = 'default'  # 默认账号
                 
+                # 检查是否在排除列表中
+                if account in self.excluded_accounts:
+                    logger.info(f"跳过排除账号: {account}")
+                    continue
+                
                 if account not in articles_by_account:
                     articles_by_account[account] = []
                 
@@ -163,6 +180,15 @@ class MultiAccountTwitterPublisher:
         # 查找未发布的文章
         for article in self.current_data:
             if not article['is_published']:
+                account = article['publish_account']
+                if not account:
+                    account = 'default'
+                
+                # 检查是否在排除列表中
+                if account in self.excluded_accounts:
+                    logger.info(f"跳过排除账号: {account}")
+                    continue
+                
                 return article
         
         return None
@@ -275,7 +301,8 @@ class MultiAccountTwitterPublisher:
             'total': len(self.current_data),
             'published': sum(1 for article in self.current_data if article['is_published']),
             'unpublished': 0,
-            'by_account': {}
+            'by_account': {},
+            'excluded_accounts': self.excluded_accounts
         }
         
         stats['unpublished'] = stats['total'] - stats['published']
@@ -288,7 +315,8 @@ class MultiAccountTwitterPublisher:
                 stats['by_account'][account] = {
                     'total': 0,
                     'published': 0,
-                    'unpublished': 0
+                    'unpublished': 0,
+                    'excluded': account in self.excluded_accounts
                 }
             
             stats['by_account'][account]['total'] += 1
@@ -326,7 +354,10 @@ class MultiAccountTwitterPublisher:
             
             # 按账号显示统计
             for account, account_stats in stats['by_account'].items():
-                logger.info(f"   {account}: {account_stats['unpublished']} 待发布")
+                if account_stats.get('excluded', False):
+                    logger.info(f"   {account}: {account_stats['unpublished']} 待发布 (已暂停)")
+                else:
+                    logger.info(f"   {account}: {account_stats['unpublished']} 待发布")
             
             # 获取下一篇文章
             article = self.get_next_article()
@@ -417,8 +448,11 @@ def main():
     print("=" * 50)
     
     try:
+        # 暂时排除contextspace账号的自动发布
+        excluded_accounts = ['ContextSpace']
+        
         # 创建发布器
-        publisher = MultiAccountTwitterPublisher()
+        publisher = MultiAccountTwitterPublisher(excluded_accounts=excluded_accounts)
         
         # 运行一次
         success = publisher.run_once()

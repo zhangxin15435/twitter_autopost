@@ -25,7 +25,10 @@ class TwitterAccountsConfig:
         """初始化账号配置管理"""
         self.config_file = config_file
         self.accounts = {}
+        # 账号启用/禁用状态（内存中存储，可持久化到文件）
+        self.account_enabled_status = {}
         self.load_accounts()
+        self.load_enabled_status()
     
     def load_accounts(self):
         """加载账号配置"""
@@ -41,6 +44,95 @@ class TwitterAccountsConfig:
             
         except Exception as e:
             logger.error(f"加载账号配置失败: {str(e)}")
+    
+    def load_enabled_status(self):
+        """加载账号启用状态"""
+        try:
+            status_file = "twitter_accounts_status.json"
+            if os.path.exists(status_file):
+                with open(status_file, 'r', encoding='utf-8') as f:
+                    self.account_enabled_status = json.load(f)
+                logger.info(f"已加载账号启用状态配置")
+            else:
+                # 默认所有账号都启用
+                for account_name in self.accounts.keys():
+                    self.account_enabled_status[account_name] = True
+                logger.info("使用默认账号启用状态（全部启用）")
+        except Exception as e:
+            logger.error(f"加载账号启用状态失败: {str(e)}")
+            # 如果加载失败，默认所有账号都启用
+            for account_name in self.accounts.keys():
+                self.account_enabled_status[account_name] = True
+    
+    def save_enabled_status(self):
+        """保存账号启用状态"""
+        try:
+            status_file = "twitter_accounts_status.json"
+            with open(status_file, 'w', encoding='utf-8') as f:
+                json.dump(self.account_enabled_status, f, indent=2, ensure_ascii=False)
+            logger.info(f"账号启用状态已保存到 {status_file}")
+        except Exception as e:
+            logger.error(f"保存账号启用状态失败: {str(e)}")
+    
+    def set_account_enabled(self, account_name: str, enabled: bool):
+        """设置账号启用/禁用状态"""
+        # 获取实际账号名称（处理映射）
+        actual_account = self._get_actual_account_name(account_name)
+        
+        if actual_account and actual_account in self.accounts:
+            self.account_enabled_status[actual_account] = enabled
+            self.save_enabled_status()
+            status_text = "启用" if enabled else "禁用"
+            logger.info(f"账号 '{actual_account}' 已{status_text}")
+            return True
+        else:
+            logger.error(f"账号 '{account_name}' 不存在，无法设置状态")
+            return False
+    
+    def is_account_enabled(self, account_name: str) -> bool:
+        """检查账号是否启用"""
+        # 获取实际账号名称（处理映射）
+        actual_account = self._get_actual_account_name(account_name)
+        
+        if actual_account and actual_account in self.accounts:
+            return self.account_enabled_status.get(actual_account, True)
+        return False
+    
+    def _get_actual_account_name(self, account_name: str) -> Optional[str]:
+        """获取实际的账号名称（处理映射）"""
+        account_mapping = {
+            # 主账号 - ContextSpace
+            'contextspace': 'contextspace',
+            'context space': 'contextspace',
+            'twitter': 'contextspace',  # 默认映射到ContextSpace主账号
+            
+            # OSS Discoveries
+            'oss discoveries': 'ossdiscoveries',
+            'ossdiscoveries': 'ossdiscoveries',
+            
+            # AI Flow Watch
+            'ai flow watch': 'aiflowwatch',
+            'aiflowwatch': 'aiflowwatch',
+            
+            # Open Source Reader
+            'open source reader': 'opensourcereader',
+            'opensource reader': 'opensourcereader',
+            'opensourcereader': 'opensourcereader',
+        }
+        
+        normalized_name = account_name.lower().strip()
+        
+        # 尝试直接匹配
+        if normalized_name in self.accounts:
+            return normalized_name
+        
+        # 尝试映射匹配
+        if normalized_name in account_mapping:
+            mapped_name = account_mapping[normalized_name]
+            if mapped_name in self.accounts:
+                return mapped_name
+        
+        return None
     
     def load_from_env(self):
         """从环境变量加载账号配置"""
@@ -158,7 +250,7 @@ class TwitterAccountsConfig:
             logger.error(f"保存账号配置失败: {str(e)}")
     
     def get_account_config(self, account_name: str) -> Optional[Dict]:
-        """获取指定账号的配置"""
+        """获取指定账号的配置（只返回启用的账号）"""
         # 账号名称映射 - 更新为用户需要的四个账号
         account_mapping = {
             # 主账号 - ContextSpace
@@ -185,34 +277,52 @@ class TwitterAccountsConfig:
         logger.info(f"查找账号配置: '{account_name}' -> 标准化: '{normalized_name}'")
         logger.info(f"当前可用账号: {list(self.accounts.keys())}")
         
+        # 先检查目标账号
+        target_account = None
+        
         # 尝试直接匹配
         if normalized_name in self.accounts:
+            target_account = normalized_name
             logger.info(f"直接匹配成功: '{normalized_name}'")
-            return self.accounts[normalized_name]
-        
         # 尝试映射匹配
-        if normalized_name in account_mapping:
+        elif normalized_name in account_mapping:
             mapped_name = account_mapping[normalized_name]
             logger.info(f"账号映射: '{normalized_name}' -> '{mapped_name}'")
             if mapped_name in self.accounts:
+                target_account = mapped_name
                 logger.info(f"映射匹配成功: '{mapped_name}'")
-                return self.accounts[mapped_name]
             else:
                 logger.warning(f"映射失败: '{mapped_name}' 不在可用账号中")
-        else:
-            logger.warning(f"无映射规则: '{normalized_name}' 不在映射表中")
+        
+        # 如果找到目标账号，检查是否启用
+        if target_account:
+            if self.is_account_enabled(target_account):
+                logger.info(f"账号 '{target_account}' 已启用，返回配置")
+                return self.accounts[target_account]
+            else:
+                logger.warning(f"账号 '{target_account}' 已禁用，跳过发布")
+                return None
+        
+        # 如果没有找到账号，尝试默认账号（但要检查启用状态）
+        logger.warning(f"无映射规则: '{normalized_name}' 不在映射表中")
         
         # 尝试默认账号（ContextSpace主账号）
         if 'contextspace' in self.accounts:
-            logger.warning(f"账号 '{account_name}' 配置未找到，使用ContextSpace主账号")
-            return self.accounts['contextspace']
+            if self.is_account_enabled('contextspace'):
+                logger.warning(f"账号 '{account_name}' 配置未找到，使用ContextSpace主账号")
+                return self.accounts['contextspace']
+            else:
+                logger.warning(f"ContextSpace主账号已禁用，无法使用")
         
         # 向后兼容：尝试default账号
         if 'default' in self.accounts:
-            logger.warning(f"账号 '{account_name}' 配置未找到，使用默认账号")
-            return self.accounts['default']
+            if self.is_account_enabled('default'):
+                logger.warning(f"账号 '{account_name}' 配置未找到，使用默认账号")
+                return self.accounts['default']
+            else:
+                logger.warning(f"默认账号已禁用，无法使用")
         
-        logger.error(f"账号 '{account_name}' 配置未找到")
+        logger.error(f"账号 '{account_name}' 配置未找到或所有相关账号已禁用")
         return None
     
     def get_all_accounts(self) -> List[str]:
@@ -246,7 +356,7 @@ class TwitterAccountsConfig:
             info[account_name] = {
                 'name': config.get('account_name', account_name),
                 'display_name': config.get('display_name', account_name),
-                'enabled': config.get('enabled', True),
+                'enabled': self.is_account_enabled(account_name),  # 使用实际启用状态
                 'configured': self.validate_account(account_name)
             }
         return info

@@ -31,18 +31,12 @@ jobs:
           ${{ runner.os }}-pip-ci-
           ${{ runner.os }}-pip-
     
-    - name: 安装依赖 (仅在缓存未命中时)
-      if: steps.cache-deps.outputs.cache-hit != 'true'
+    - name: 安装依赖
       run: |
-        echo "🔄 缓存未命中，安装依赖..."
         python -m pip install --upgrade pip
-        pip install --no-cache-dir -r requirements.txt
-        pip install --no-cache-dir flake8 pytest
-    
-    - name: 使用缓存依赖
-      if: steps.cache-deps.outputs.cache-hit == 'true'
-      run: |
-        echo "⚡ 使用缓存依赖，跳过安装步骤"
+        pip install -r requirements.txt
+        pip install flake8 pytest
+        echo "✅ 依赖安装完成"
         pip list
     
     - name: 代码格式检查

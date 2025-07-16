@@ -49,18 +49,22 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
     
-    - name: 📦 安装依赖 (仅在缓存未命中时)
-      if: steps.cache-deps.outputs.cache-hit != 'true'
+    - name: 📦 安装依赖
       run: |
-        echo "🔄 缓存未命中，安装依赖..."
         python -m pip install --upgrade pip
-        pip install --no-cache-dir -r requirements.txt
-    
-    - name: ✅ 使用缓存依赖
-      if: steps.cache-deps.outputs.cache-hit == 'true'
-      run: |
-        echo "⚡ 使用缓存依赖，跳过安装步骤"
+        pip install -r requirements.txt
+        echo "✅ 依赖安装完成"
         pip list
+    
+    - name: 🔍 验证关键依赖
+      run: |
+        echo "🧪 验证关键依赖包..."
+        python -c "import tweepy; print('✅ tweepy - Twitter API库')"
+        python -c "import dotenv; print('✅ python-dotenv - 环境变量加载库')"
+        python -c "import requests; print('✅ requests - HTTP请求库')"
+        python -c "import pandas; print('✅ pandas - 数据处理库')"
+        python -c "import pytz; print('✅ pytz - 时区处理库')"
+        echo "�� 所有关键依赖验证通过！"
     
     - name: 📝 显示发布信息
       run: |
@@ -114,8 +118,6 @@ jobs:
         
         echo "🧪 测试目标账号连接..."
         python connect_twitter_multi.py
-    
-
     
     - name: 🚀 执行手动推文发布
       env:
