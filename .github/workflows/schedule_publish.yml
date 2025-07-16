@@ -54,7 +54,6 @@ jobs:
         python -c "import tweepy; print('✅ tweepy - Twitter API库')"
         python -c "import dotenv; print('✅ python-dotenv - 环境变量加载库')"
         python -c "import requests; print('✅ requests - HTTP请求库')"
-        python -c "import pandas; print('✅ pandas - 数据处理库')"
         python -c "import pytz; print('✅ pytz - 时区处理库')"
         echo "🎉 所有关键依赖验证通过！"
     

@@ -72,7 +72,6 @@ Invalid step definition
 ✅ tweepy - Twitter API库
 ✅ python-dotenv - 环境变量加载库
 ✅ requests - HTTP请求库
-✅ pandas - 数据处理库
 ✅ pytz - 时区处理库
 🎉 所有关键依赖验证通过！
 ```

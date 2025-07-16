@@ -58,11 +58,10 @@ GitHub Actions使用了条件依赖安装：
 - name: 🔍 验证关键依赖
   run: |
     echo "🧪 验证关键依赖包..."
-    python -c "import tweepy; print('✅ tweepy - Twitter API库')"
-    python -c "import dotenv; print('✅ python-dotenv - 环境变量加载库')"
-    python -c "import requests; print('✅ requests - HTTP请求库')"
-    python -c "import pandas; print('✅ pandas - 数据处理库')"
-    python -c "import pytz; print('✅ pytz - 时区处理库')"
+         python -c "import tweepy; print('✅ tweepy - Twitter API库')"
+     python -c "import dotenv; print('✅ python-dotenv - 环境变量加载库')"
+     python -c "import requests; print('✅ requests - HTTP请求库')"
+     python -c "import pytz; print('✅ pytz - 时区处理库')"
     echo "🎉 所有关键依赖验证通过！"
 ```
 
@@ -97,7 +96,7 @@ GitHub Actions使用了条件依赖安装：
 ```bash
 # 检查依赖
 pip install -r requirements.txt
-python -c "import tweepy, dotenv, requests, pandas, pytz; print('✅ 所有依赖正常')"
+python -c "import tweepy, dotenv, requests, pytz; print('✅ 所有依赖正常')"
 ```
 
 ### GitHub Actions验证：
@@ -127,7 +126,6 @@ python -c "import tweepy, dotenv, requests, pandas, pytz; print('✅ 所有依�
 ✅ tweepy - Twitter API库
 ✅ python-dotenv - 环境变量加载库
 ✅ requests - HTTP请求库
-✅ pandas - 数据处理库
 ✅ pytz - 时区处理库
 🎉 所有关键依赖验证通过！
 ```
