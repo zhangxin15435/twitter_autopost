@@ -50,6 +50,65 @@ class MultiAccountTwitterPublisher:
         else:
             logger.info(f"多账号Twitter发布器初始化完成")
     
+    def publish_single_tweet(self, content: str, account_name: str) -> bool:
+        """
+        发布单条推文到指定账号
+        
+        Args:
+            content: 推文内容
+            account_name: 账号名称（如 'ContextSpace', 'OSS Discoveries' 等）
+            
+        Returns:
+            bool: 发布是否成功
+        """
+        try:
+            # 标准化账号名称
+            account_mapping = {
+                'contextspace': 'contextspace',
+                'context space': 'contextspace', 
+                'twitter': 'contextspace',
+                'oss discoveries': 'ossdiscoveries',
+                'ossdiscoveries': 'ossdiscoveries',
+                'oss': 'ossdiscoveries',
+                'ai flow watch': 'aiflowwatch',
+                'aiflowwatch': 'aiflowwatch', 
+                'ai': 'aiflowwatch',
+                'open source reader': 'opensourcereader',
+                'opensourcereader': 'opensourcereader',
+                'reader': 'opensourcereader'
+            }
+            
+            normalized_account = account_mapping.get(account_name.lower().strip(), 'contextspace')
+            
+            # 检查账号是否在排除列表中
+            if normalized_account in self.excluded_accounts:
+                logger.warning(f"账号 {normalized_account} 已被排除，跳过发布")
+                return False
+            
+            # 获取API连接
+            api = self.account_manager.get_api(normalized_account)
+            if not api:
+                logger.error(f"无法获取账号 {normalized_account} 的API连接")
+                return False
+            
+            # 发布推文
+            logger.info(f"正在发布推文到账号 {normalized_account}")
+            logger.info(f"推文内容: {content[:50]}...")
+            
+            response = api.create_tweet(text=content)
+            
+            if response and response.data:
+                tweet_id = response.data['id']
+                logger.info(f"✅ 推文发布成功！Tweet ID: {tweet_id}")
+                return True
+            else:
+                logger.error(f"❌ 推文发布失败，API响应异常")
+                return False
+                
+        except Exception as e:
+            logger.error(f"💥 发布推文时出现异常: {str(e)}")
+            return False
+    
     def load_content_data(self) -> List[Dict]:
         """加载content文件夹中的数据"""
         try:

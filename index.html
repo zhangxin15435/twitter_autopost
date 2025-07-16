@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Twitter四账号发布控制台</title>
+    <title>Twitter智能多账号发布控制台</title>
     <style>
         * {
             margin: 0;
@@ -16,9 +16,6 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             padding: 20px;
         }
 
@@ -27,8 +24,9 @@
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             padding: 40px;
-            max-width: 600px;
+            max-width: 1000px;
             width: 100%;
+            margin: 0 auto;
         }
 
         .header {
@@ -51,6 +49,132 @@
             font-size: 1.1em;
         }
 
+        /* 标签页样式 */
+        .tab-container {
+            margin-bottom: 30px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            border-bottom: 2px solid #E1E8ED;
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 15px 25px;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #657786;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        .tab-button.active {
+            color: #1DA1F2;
+            border-bottom-color: #1DA1F2;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 文件上传区域 */
+        .upload-area {
+            border: 2px dashed #E1E8ED;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            border-color: #1DA1F2;
+            background: #F0F8FF;
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            color: #1DA1F2;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            color: #14171A;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            color: #657786;
+            font-size: 0.9em;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #E1E8ED;
+        }
+
+        .data-table th {
+            background: #F7F9FA;
+            font-weight: 600;
+            color: #14171A;
+        }
+
+        .data-table tr:hover {
+            background: #F7F9FA;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #FFF3CD;
+            color: #856404;
+        }
+
+        .status-ready {
+            background: #D4EDDA;
+            color: #155724;
+        }
+
+        .status-published {
+            background: #CCE5FF;
+            color: #004085;
+        }
+
+        /* 原有样式保持不变 */
         .form-group {
             margin-bottom: 25px;
         }
@@ -171,6 +295,22 @@
             box-shadow: none;
         }
 
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .button-secondary {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            flex: 1;
+        }
+
+        .button-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            flex: 1;
+        }
+
         .instructions {
             background: #F0F8FF;
             border: 1px solid #1DA1F2;
@@ -207,6 +347,35 @@
             text-decoration: underline;
         }
 
+        .stats-card {
+            background: #F7F9FA;
+            border: 1px solid #E1E8ED;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: 700;
+            color: #1DA1F2;
+        }
+
+        .stat-label {
+            color: #657786;
+            font-size: 0.9em;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 25px;
@@ -220,6 +389,15 @@
             .account-selector {
                 grid-template-columns: 1fr;
             }
+
+            .tab-button {
+                font-size: 1em;
+                padding: 12px 15px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -227,82 +405,314 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🐦 Twitter发布控制台</h1>
-            <p>智能四账号推文发布系统</p>
+            <h1>🐦 Twitter智能发布控制台</h1>
+            <p>多账号智能推文发布系统 - 支持单条发布和批量上传</p>
         </div>
 
-        <form id="tweetForm">
-            <div class="form-group">
-                <label for="tweetContent">推文内容</label>
-                <textarea id="tweetContent" class="tweet-input" placeholder="在这里输入您要发布的推文内容..." maxlength="280"
-                    required></textarea>
-                <div class="char-counter" id="charCounter">0 / 280</div>
+        <div class="tab-container">
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="switchTab('single')">📝 单条推文</button>
+                <button class="tab-button" onclick="switchTab('batch')">📊 批量上传</button>
+                <button class="tab-button" onclick="switchTab('issue')">🎫 Issue发布</button>
+                <button class="tab-button" onclick="switchTab('manage')">📋 内容管理</button>
             </div>
 
-            <div class="form-group">
-                <label>选择发布账号</label>
-                <div class="account-selector">
-                    <div class="account-option">
-                        <input type="radio" id="contextspace" name="account" value="ContextSpace" required>
-                        <label for="contextspace" class="account-card">
-                            <div class="account-name">🏢 ContextSpace</div>
-                            <div class="account-desc">主账号，综合内容发布</div>
-                        </label>
+            <!-- 单条推文发布 -->
+            <div class="tab-content active" id="single-tab">
+                <form id="tweetForm">
+                    <div class="form-group">
+                        <label for="tweetContent">推文内容</label>
+                        <textarea id="tweetContent" class="tweet-input" placeholder="在这里输入您要发布的推文内容..." maxlength="280"
+                            required></textarea>
+                        <div class="char-counter" id="charCounter">0 / 280</div>
                     </div>
 
-                    <div class="account-option">
-                        <input type="radio" id="ossdiscoveries" name="account" value="OSS Discoveries">
-                        <label for="ossdiscoveries" class="account-card">
-                            <div class="account-name">🔧 OSS Discoveries</div>
-                            <div class="account-desc">开源工具发现、设计工具</div>
-                        </label>
+                    <div class="form-group">
+                        <label>选择发布账号</label>
+                        <div class="account-selector">
+                            <div class="account-option">
+                                <input type="radio" id="contextspace" name="account" value="ContextSpace" required>
+                                <label for="contextspace" class="account-card">
+                                    <div class="account-name">🏢 ContextSpace</div>
+                                    <div class="account-desc">主账号，综合内容发布</div>
+                                </label>
+                            </div>
+
+                            <div class="account-option">
+                                <input type="radio" id="ossdiscoveries" name="account" value="OSS Discoveries">
+                                <label for="ossdiscoveries" class="account-card">
+                                    <div class="account-name">🔧 OSS Discoveries</div>
+                                    <div class="account-desc">开源工具发现、设计工具</div>
+                                </label>
+                            </div>
+
+                            <div class="account-option">
+                                <input type="radio" id="aiflowwatch" name="account" value="Ai flow watch">
+                                <label for="aiflowwatch" class="account-card">
+                                    <div class="account-name">🤖 AI Flow Watch</div>
+                                    <div class="account-desc">AI技术、机器学习、工作流</div>
+                                </label>
+                            </div>
+
+                            <div class="account-option">
+                                <input type="radio" id="opensourcereader" name="account" value="Open source reader">
+                                <label for="opensourcereader" class="account-card">
+                                    <div class="account-name">📚 Open Source Reader</div>
+                                    <div class="account-desc">开源项目介绍、技术评测</div>
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="account-option">
-                        <input type="radio" id="aiflowwatch" name="account" value="Ai flow watch">
-                        <label for="aiflowwatch" class="account-card">
-                            <div class="account-name">🤖 AI Flow Watch</div>
-                            <div class="account-desc">AI技术、机器学习、工作流</div>
-                        </label>
+                    <button type="button" class="publish-button" id="publishBtn" onclick="publishSingleTweet()">
+                        🚀 立即发布推文
+                    </button>
+                </form>
+            </div>
+
+            <!-- 批量上传 -->
+            <div class="tab-content" id="batch-tab">
+                <div class="upload-area" onclick="triggerFileInput()" ondrop="handleDrop(event)"
+                    ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                    <div class="upload-icon">📂</div>
+                    <div class="upload-text">点击上传或拖拽CSV文件到此处</div>
+                    <div class="upload-hint">支持格式：CSV文件，包含"内容主题,提出人,发布账号,是否发布"字段</div>
+                    <input type="file" id="csvFileInput" class="file-input" accept=".csv"
+                        onchange="handleFileSelect(event)">
+                </div>
+
+                <div id="csvPreview" style="display: none;">
+                    <h3>📋 CSV文件预览</h3>
+                    <div class="stats-card">
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-number" id="totalCount">0</div>
+                                <div class="stat-label">总条数</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number" id="readyCount">0</div>
+                                <div class="stat-label">待发布</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number" id="publishedCount">0</div>
+                                <div class="stat-label">已发布</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table" id="csvTable">
+                            <thead>
+                                <tr>
+                                    <th>内容主题</th>
+                                    <th>提出人</th>
+                                    <th>发布账号</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
                     </div>
 
-                    <div class="account-option">
-                        <input type="radio" id="opensourcereader" name="account" value="Open source reader">
-                        <label for="opensourcereader" class="account-card">
-                            <div class="account-name">📚 Open Source Reader</div>
-                            <div class="account-desc">开源项目介绍、技术评测</div>
-                        </label>
+                    <div class="button-group">
+                        <button class="publish-button button-secondary" onclick="publishBatchTweets()">
+                            🚀 批量发布待发布内容
+                        </button>
+                        <button class="publish-button button-danger" onclick="clearData()">
+                            🗑️ 清空数据
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <button type="button" class="publish-button" id="publishBtn" onclick="publishTweet()">
-                🚀 立即发布推文
-            </button>
-        </form>
+            <!-- Issue发布 -->
+            <div class="tab-content" id="issue-tab">
+                <div class="stats-card">
+                    <h3>🎫 通过GitHub Issue发布推文</h3>
+                    <p style="color: #657786; margin-bottom: 20px;">
+                        这是<strong>完全公开</strong>的发布方式，任何人都可以创建Issue来发布推文，无需登录权限！
+                    </p>
+                </div>
+
+                <form id="issueForm">
+                    <div class="form-group">
+                        <label for="issueContent">推文内容</label>
+                        <textarea id="issueContent" class="tweet-input" placeholder="在这里输入要发布的推文内容..." maxlength="280"
+                            required></textarea>
+                        <div class="char-counter" id="issueCharCounter">0 / 280</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>发布账号</label>
+                        <div class="account-selector">
+                            <div class="account-option">
+                                <input type="radio" id="issue-contextspace" name="issueAccount" value="ContextSpace"
+                                    required>
+                                <label for="issue-contextspace" class="account-card">
+                                    <div class="account-name">🏢 ContextSpace</div>
+                                    <div class="account-desc">主账号，综合内容发布</div>
+                                </label>
+                            </div>
+
+                            <div class="account-option">
+                                <input type="radio" id="issue-ossdiscoveries" name="issueAccount"
+                                    value="OSS Discoveries">
+                                <label for="issue-ossdiscoveries" class="account-card">
+                                    <div class="account-name">🔧 OSS Discoveries</div>
+                                    <div class="account-desc">开源工具发现、设计工具</div>
+                                </label>
+                            </div>
+
+                            <div class="account-option">
+                                <input type="radio" id="issue-aiflowwatch" name="issueAccount" value="Ai flow watch">
+                                <label for="issue-aiflowwatch" class="account-card">
+                                    <div class="account-name">🤖 AI Flow Watch</div>
+                                    <div class="account-desc">AI技术、机器学习、工作流</div>
+                                </label>
+                            </div>
+
+                            <div class="account-option">
+                                <input type="radio" id="issue-opensourcereader" name="issueAccount"
+                                    value="Open source reader">
+                                <label for="issue-opensourcereader" class="account-card">
+                                    <div class="account-name">📚 Open Source Reader</div>
+                                    <div class="account-desc">开源项目介绍、技术评测</div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="publish-button" id="issuePublishBtn" onclick="createIssueForTweet()">
+                        🎫 创建Issue发布推文
+                    </button>
+                </form>
+
+                <div class="instructions" style="margin-top: 30px;">
+                    <h3>🎯 Issue发布优势</h3>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>无需权限</strong>：任何人都可以创建Issue发布推文</li>
+                        <li><strong>自动处理</strong>：系统自动解析Issue内容并发布</li>
+                        <li><strong>结果反馈</strong>：发布结果会在Issue中自动回复</li>
+                        <li><strong>历史记录</strong>：所有发布请求都有完整记录</li>
+                        <li><strong>多种格式</strong>：支持文本、JSON等多种输入格式</li>
+                    </ul>
+
+                    <h3 style="margin-top: 20px;">📝 使用步骤</h3>
+                    <ol style="margin-left: 20px;">
+                        <li>在上方输入推文内容和选择账号</li>
+                        <li>点击"创建Issue发布推文"按钮</li>
+                        <li>跳转到GitHub，标题和内容已自动填充</li>
+                        <li>点击"Submit new issue"提交</li>
+                        <li>等待自动发布，结果会在Issue中显示</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- 内容管理 -->
+            <div class="tab-content" id="manage-tab">
+                <div class="stats-card">
+                    <h3>📊 内容统计</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-number" id="manageTotalCount">0</div>
+                            <div class="stat-label">本地总数</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="manageReadyCount">0</div>
+                            <div class="stat-label">待发布</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="managePublishedCount">0</div>
+                            <div class="stat-label">已发布</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="data-table" id="manageTable">
+                        <thead>
+                            <tr>
+                                <th>内容主题</th>
+                                <th>发布账号</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="button-group">
+                    <button class="publish-button" onclick="downloadCSV()">
+                        📥 下载CSV文件
+                    </button>
+                    <button class="publish-button button-danger" onclick="clearAllData()">
+                        🗑️ 清空所有数据
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <div class="instructions">
             <h3>📋 使用说明</h3>
             <ol>
-                <li>在上方文本框中输入您要发布的推文内容（最多280字符）</li>
-                <li>选择要发布到的Twitter账号</li>
-                <li>点击"立即发布推文"按钮</li>
-                <li>系统会自动跳转到GitHub Actions页面执行发布</li>
-                <li>在GitHub Actions页面填入相同的内容和账号信息</li>
-                <li>等待工作流执行完成，查看发布结果</li>
+                <li><strong>单条推文</strong>：直接输入内容，选择账号，一键发布（需要GitHub仓库权限）</li>
+                <li><strong>批量上传</strong>：上传CSV文件，预览后批量发布（需要GitHub仓库权限）</li>
+                <li><strong>🎫 Issue发布</strong>：任何人都可以创建Issue发布推文（无需权限，推荐！）</li>
+                <li><strong>内容管理</strong>：查看所有内容，管理发布状态</li>
+                <li>CSV文件格式：内容主题,提出人,发布账号,是否发布</li>
+                <li>发布账号支持：ContextSpace, OSS Discoveries, Ai flow watch, Open source reader</li>
             </ol>
             <p style="margin-top: 15px;">
                 <a href="https://github.com/zhangxin15435/twitter_autopost/actions" target="_blank" class="github-link">
-                    📂 前往GitHub Actions
+                    📂 前往GitHub Actions查看发布状态
                 </a>
             </p>
         </div>
     </div>
 
     <script>
+        // 全局变量
+        let csvData = [];
+        let currentTab = 'single';
+
+        // 标签页切换
+        function switchTab(tabName) {
+            // 隐藏所有标签页内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // 移除所有按钮的激活状态
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // 显示选中的标签页
+            document.getElementById(tabName + '-tab').classList.add('active');
+
+            // 激活选中的按钮
+            event.target.classList.add('active');
+
+            currentTab = tabName;
+
+            // 如果切换到管理标签页，刷新数据
+            if (tabName === 'manage') {
+                refreshManageTab();
+            }
+        }
+
+        // 单条推文发布相关代码（保持原有功能）
         const tweetContent = document.getElementById('tweetContent');
         const charCounter = document.getElementById('charCounter');
         const publishBtn = document.getElementById('publishBtn');
+
+        // Issue发布相关元素
+        const issueContent = document.getElementById('issueContent');
+        const issueCharCounter = document.getElementById('issueCharCounter');
+        const issuePublishBtn = document.getElementById('issuePublishBtn');
 
         // 字符计数器
         tweetContent.addEventListener('input', function () {
@@ -319,13 +729,37 @@
                 charCounter.className = 'char-counter';
             }
 
-            // 更新发布按钮状态
             updatePublishButton();
         });
+
+        // Issue字符计数器
+        if (issueContent) {
+            issueContent.addEventListener('input', function () {
+                const length = this.value.length;
+                const remaining = 280 - length;
+
+                issueCharCounter.textContent = `${length} / 280`;
+
+                if (remaining < 20) {
+                    issueCharCounter.className = 'char-counter error';
+                } else if (remaining < 50) {
+                    issueCharCounter.className = 'char-counter warning';
+                } else {
+                    issueCharCounter.className = 'char-counter';
+                }
+
+                updateIssuePublishButton();
+            });
+        }
 
         // 监听账号选择
         document.querySelectorAll('input[name="account"]').forEach(radio => {
             radio.addEventListener('change', updatePublishButton);
+        });
+
+        // 监听Issue账号选择
+        document.querySelectorAll('input[name="issueAccount"]').forEach(radio => {
+            radio.addEventListener('change', updateIssuePublishButton);
         });
 
         function updatePublishButton() {
@@ -335,7 +769,16 @@
             publishBtn.disabled = !content || !selectedAccount || content.length > 280;
         }
 
-        function publishTweet() {
+        function updateIssuePublishButton() {
+            if (!issueContent || !issuePublishBtn) return;
+
+            const content = issueContent.value.trim();
+            const selectedAccount = document.querySelector('input[name="issueAccount"]:checked');
+
+            issuePublishBtn.disabled = !content || !selectedAccount || content.length > 280;
+        }
+
+        function publishSingleTweet() {
             const content = tweetContent.value.trim();
             const selectedAccount = document.querySelector('input[name="account"]:checked');
 
@@ -349,59 +792,424 @@
                 return;
             }
 
+            // 添加到本地存储
+            addToLocalStorage({
+                content: content,
+                author: '手动输入',
+                account: selectedAccount.value,
+                status: '待发布',
+                timestamp: new Date().toISOString()
+            });
+
+            // 发布推文
+            publishToGitHub([{
+                content: content,
+                account: selectedAccount.value
+            }]);
+        }
+
+        // Issue发布功能
+        function createIssueForTweet() {
+            const content = issueContent.value.trim();
+            const selectedAccount = document.querySelector('input[name="issueAccount"]:checked');
+
+            if (!content || !selectedAccount) {
+                alert('请输入推文内容并选择发布账号');
+                return;
+            }
+
+            if (content.length > 280) {
+                alert('推文内容超过280字符限制');
+                return;
+            }
+
+            // 构建Issue标题
+            const title = encodeURIComponent(`[推文发布] ${content.substring(0, 30)}${content.length > 30 ? '...' : ''}`);
+
+            // 构建Issue内容
+            const issueBody = `## 📝 推文内容
+
+**内容:** ${content}
+**账号:** ${selectedAccount.value}
+
+---
+
+## 🤖 自动发布说明
+
+此Issue会自动触发推文发布流程：
+- 系统会解析上述内容并发布到指定的Twitter账号
+- 发布完成后会在此Issue中回复结果
+- 请不要修改或删除上述格式化内容
+
+发布时间: ${new Date().toLocaleString('zh-CN')}`;
+
+            // 构建GitHub Issue URL
+            const repoUrl = 'https://github.com/zhangxin15435/twitter_autopost';
+            const issueUrl = `${repoUrl}/issues/new?title=${title}&body=${encodeURIComponent(issueBody)}&labels=pending`;
+
+            // 显示确认信息
+            const confirmMessage = `即将创建GitHub Issue发布推文：
+
+📝 内容: ${content}
+🎯 账号: ${selectedAccount.value}
+
+✅ 优势:
+- 任何人都可以使用（无需仓库权限）
+- 自动发布处理
+- 完整的历史记录
+- 结果自动反馈
+
+确认要跳转到GitHub创建Issue吗？`;
+
+            if (confirm(confirmMessage)) {
+                // 保存数据供后续参考
+                localStorage.setItem('lastIssueData', JSON.stringify({
+                    content: content,
+                    account: selectedAccount.value,
+                    timestamp: new Date().toISOString()
+                }));
+
+                alert('即将跳转到GitHub Issue页面！\n\n📋 操作步骤：\n1. 确认标题和内容已自动填充\n2. 点击"Submit new issue"提交\n3. 等待自动发布（通常1-2分钟）\n4. 查看Issue中的发布结果反馈');
+
+                // 跳转到GitHub Issue创建页面
+                window.open(issueUrl, '_blank');
+
+                // 清空表单
+                issueContent.value = '';
+                document.querySelector('input[name="issueAccount"]:checked').checked = false;
+                updateIssuePublishButton();
+
+                // 更新字符计数显示
+                issueCharCounter.textContent = '0 / 280';
+                issueCharCounter.className = 'char-counter';
+            }
+        }
+
+        // 文件上传相关功能
+        function triggerFileInput() {
+            document.getElementById('csvFileInput').click();
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.target.closest('.upload-area').classList.add('dragover');
+        }
+
+        function handleDragLeave(event) {
+            event.target.closest('.upload-area').classList.remove('dragover');
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            event.target.closest('.upload-area').classList.remove('dragover');
+
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect({ target: { files: files } });
+            }
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                alert('请选择CSV文件！');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const csvText = e.target.result;
+                parseCSVData(csvText);
+            };
+            reader.readAsText(file, 'utf-8');
+        }
+
+        function parseCSVData(csvText) {
+            const lines = csvText.split('\n');
+            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+
+            csvData = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                const values = parseCSVLine(line);
+                if (values.length >= 4) {
+                    csvData.push({
+                        content: values[0] || '',
+                        author: values[1] || '',
+                        account: values[2] || '',
+                        status: values[3] === '是' ? '已发布' : '待发布',
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            }
+
+            displayCSVPreview();
+            saveToLocalStorage();
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                const nextChar = line[i + 1];
+
+                if (char === '"' && !inQuotes) {
+                    inQuotes = true;
+                } else if (char === '"' && inQuotes && nextChar === '"') {
+                    current += '"';
+                    i++; // 跳过下一个引号
+                } else if (char === '"' && inQuotes) {
+                    inQuotes = false;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+
+            result.push(current.trim());
+            return result;
+        }
+
+        function displayCSVPreview() {
+            const preview = document.getElementById('csvPreview');
+            const table = document.getElementById('csvTable').querySelector('tbody');
+
+            // 清空表格
+            table.innerHTML = '';
+
+            // 统计数据
+            let totalCount = csvData.length;
+            let readyCount = csvData.filter(item => item.status === '待发布').length;
+            let publishedCount = csvData.filter(item => item.status === '已发布').length;
+
+            // 更新统计
+            document.getElementById('totalCount').textContent = totalCount;
+            document.getElementById('readyCount').textContent = readyCount;
+            document.getElementById('publishedCount').textContent = publishedCount;
+
+            // 填充表格
+            csvData.forEach((item, index) => {
+                const row = table.insertRow();
+                row.innerHTML = `
+                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.content}">${item.content}</td>
+                    <td>${item.author}</td>
+                    <td>${item.account}</td>
+                    <td><span class="status-badge ${item.status === '已发布' ? 'status-published' : 'status-ready'}">${item.status}</span></td>
+                    <td>
+                        <button onclick="toggleStatus(${index})" style="padding: 4px 8px; border: none; border-radius: 4px; background: #1DA1F2; color: white; cursor: pointer;">
+                            ${item.status === '已发布' ? '设为待发布' : '设为已发布'}
+                        </button>
+                    </td>
+                `;
+            });
+
+            preview.style.display = 'block';
+        }
+
+        function toggleStatus(index) {
+            csvData[index].status = csvData[index].status === '已发布' ? '待发布' : '已发布';
+            displayCSVPreview();
+            saveToLocalStorage();
+        }
+
+        function publishBatchTweets() {
+            const readyItems = csvData.filter(item => item.status === '待发布');
+
+            if (readyItems.length === 0) {
+                alert('没有待发布的内容！');
+                return;
+            }
+
+            if (confirm(`确认要发布 ${readyItems.length} 条推文吗？`)) {
+                publishToGitHub(readyItems);
+
+                // 更新状态为已发布
+                csvData.forEach(item => {
+                    if (item.status === '待发布') {
+                        item.status = '已发布';
+                    }
+                });
+
+                displayCSVPreview();
+                saveToLocalStorage();
+            }
+        }
+
+        function publishToGitHub(items) {
             // 构建GitHub Actions URL
             const repoUrl = 'https://github.com/zhangxin15435/twitter_autopost';
             const actionsUrl = `${repoUrl}/actions/workflows/manual_publish.yml`;
 
-            // 保存数据到localStorage，供GitHub Actions页面使用
-            localStorage.setItem('pendingTweet', JSON.stringify({
-                content: content,
-                account: selectedAccount.value,
+            // 构建批量发布数据
+            const batchData = items.map(item => ({
+                content: item.content,
+                account: item.account
+            }));
+
+            // 保存到localStorage供GitHub Actions使用
+            localStorage.setItem('batchTweets', JSON.stringify({
+                data: batchData,
                 timestamp: new Date().toISOString()
             }));
 
-            // 显示确认信息
-            const message = `即将发布推文：\n\n内容：${content}\n账号：${selectedAccount.value}\n\n确认要继续吗？`;
+            const message = `准备发布 ${items.length} 条推文到GitHub Actions\n\n${items.slice(0, 3).map(item => `• ${item.content.substring(0, 50)}... → ${item.account}`).join('\n')}${items.length > 3 ? `\n...还有 ${items.length - 3} 条` : ''}`;
 
-            if (confirm(message)) {
-                // 复制内容到剪贴板
-                navigator.clipboard.writeText(content).then(() => {
-                    alert(`推文内容已复制到剪贴板！\n\n接下来会跳转到GitHub Actions页面，请：\n1. 点击"Run workflow"\n2. 粘贴推文内容\n3. 选择账号：${selectedAccount.value}\n4. 点击"Run workflow"执行`);
-
-                    // 跳转到GitHub Actions
-                    window.open(actionsUrl, '_blank');
-                }).catch(() => {
-                    alert(`准备发布推文：\n\n内容：${content}\n账号：${selectedAccount.value}\n\n接下来会跳转到GitHub Actions页面执行发布`);
-                    window.open(actionsUrl, '_blank');
-                });
+            if (confirm(message + '\n\n确认要跳转到GitHub Actions吗？')) {
+                alert('数据已准备完成！\n\n接下来在GitHub Actions页面：\n1. 点击"Run workflow"\n2. 选择"批量发布模式"\n3. 点击"Run workflow"执行');
+                window.open(actionsUrl, '_blank');
             }
         }
 
-        // 页面加载时检查是否有待发布的推文
+        // 本地存储功能
+        function saveToLocalStorage() {
+            localStorage.setItem('twitterData', JSON.stringify(csvData));
+        }
+
+        function loadFromLocalStorage() {
+            const data = localStorage.getItem('twitterData');
+            if (data) {
+                csvData = JSON.parse(data);
+            }
+        }
+
+        function addToLocalStorage(item) {
+            csvData.push(item);
+            saveToLocalStorage();
+        }
+
+        function clearData() {
+            if (confirm('确认要清空当前批量上传的数据吗？')) {
+                csvData = [];
+                document.getElementById('csvPreview').style.display = 'none';
+                document.getElementById('csvFileInput').value = '';
+                saveToLocalStorage();
+            }
+        }
+
+        function clearAllData() {
+            if (confirm('确认要清空所有本地存储的数据吗？此操作不可恢复！')) {
+                localStorage.removeItem('twitterData');
+                localStorage.removeItem('batchTweets');
+                localStorage.removeItem('pendingTweet');
+                csvData = [];
+                refreshManageTab();
+                if (document.getElementById('csvPreview').style.display !== 'none') {
+                    displayCSVPreview();
+                }
+            }
+        }
+
+        // 内容管理功能
+        function refreshManageTab() {
+            loadFromLocalStorage();
+
+            const table = document.getElementById('manageTable').querySelector('tbody');
+            table.innerHTML = '';
+
+            // 统计数据
+            let totalCount = csvData.length;
+            let readyCount = csvData.filter(item => item.status === '待发布').length;
+            let publishedCount = csvData.filter(item => item.status === '已发布').length;
+
+            // 更新统计
+            document.getElementById('manageTotalCount').textContent = totalCount;
+            document.getElementById('manageReadyCount').textContent = readyCount;
+            document.getElementById('managePublishedCount').textContent = publishedCount;
+
+            // 填充表格
+            csvData.forEach((item, index) => {
+                const row = table.insertRow();
+                row.innerHTML = `
+                    <td style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.content}">${item.content}</td>
+                    <td>${item.account}</td>
+                    <td><span class="status-badge ${item.status === '已发布' ? 'status-published' : 'status-ready'}">${item.status}</span></td>
+                    <td>
+                        <button onclick="toggleStatus(${index}); refreshManageTab();" style="padding: 4px 8px; border: none; border-radius: 4px; background: #1DA1F2; color: white; cursor: pointer; margin-right: 5px;">
+                            切换状态
+                        </button>
+                        <button onclick="deleteItem(${index})" style="padding: 4px 8px; border: none; border-radius: 4px; background: #dc3545; color: white; cursor: pointer;">
+                            删除
+                        </button>
+                    </td>
+                `;
+            });
+        }
+
+        function deleteItem(index) {
+            if (confirm('确认要删除这条内容吗？')) {
+                csvData.splice(index, 1);
+                saveToLocalStorage();
+                refreshManageTab();
+
+                // 如果当前在批量预览页面，也需要更新
+                if (document.getElementById('csvPreview').style.display !== 'none') {
+                    displayCSVPreview();
+                }
+            }
+        }
+
+        function downloadCSV() {
+            if (csvData.length === 0) {
+                alert('没有数据可以下载！');
+                return;
+            }
+
+            let csvContent = '内容主题,提出人,发布账号,是否发布\n';
+            csvData.forEach(item => {
+                const status = item.status === '已发布' ? '是' : '否';
+                csvContent += `"${item.content}","${item.author}","${item.account}","${status}"\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `twitter_content_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 页面加载时初始化
         window.addEventListener('load', function () {
+            loadFromLocalStorage();
+            updatePublishButton();
+            updateIssuePublishButton();
+
+            // 检查是否有待发布的推文（兼容旧版本）
             const pendingTweet = localStorage.getItem('pendingTweet');
             if (pendingTweet) {
                 try {
                     const data = JSON.parse(pendingTweet);
                     const timeDiff = new Date() - new Date(data.timestamp);
 
-                    // 如果数据在1小时内，自动填充
                     if (timeDiff < 3600000) {
                         tweetContent.value = data.content;
                         document.querySelector(`input[value="${data.account}"]`).checked = true;
                         updatePublishButton();
-
-                        // 清除已使用的数据
                         localStorage.removeItem('pendingTweet');
                     }
                 } catch (e) {
                     localStorage.removeItem('pendingTweet');
                 }
             }
-        });
 
-        // 初始化按钮状态
-        updatePublishButton();
+            // 如果有数据，显示批量预览
+            if (csvData.length > 0) {
+                displayCSVPreview();
+            }
+        });
     </script>
 </body>
 

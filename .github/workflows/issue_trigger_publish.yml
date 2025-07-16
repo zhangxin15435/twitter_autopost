@@ -1,0 +1,227 @@
+name: 📝 Issue触发推文发布
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  parse-and-publish:
+    if: contains(github.event.issue.title, '[推文发布]')
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 检出代码
+      uses: actions/checkout@v4
+      
+    - name: 🐍 设置Python环境
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+        
+    - name: 📦 安装依赖
+      run: |
+        pip install -r requirements.txt
+        
+    - name: 📝 解析Issue内容并发布
+      env:
+        # Twitter API密钥 - ContextSpace主账号
+        TWITTER_CONTEXTSPACE_CONSUMER_KEY: ${{ secrets.TWITTER_CONTEXTSPACE_CONSUMER_KEY }}
+        TWITTER_CONTEXTSPACE_CONSUMER_SECRET: ${{ secrets.TWITTER_CONTEXTSPACE_CONSUMER_SECRET }}
+        TWITTER_CONTEXTSPACE_ACCESS_TOKEN: ${{ secrets.TWITTER_CONTEXTSPACE_ACCESS_TOKEN }}
+        TWITTER_CONTEXTSPACE_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_CONTEXTSPACE_ACCESS_TOKEN_SECRET }}
+        TWITTER_CONTEXTSPACE_BEARER_TOKEN: ${{ secrets.TWITTER_CONTEXTSPACE_BEARER_TOKEN }}
+        
+        # OSS Discoveries账号
+        TWITTER_OSSDISCOVERIES_CONSUMER_KEY: ${{ secrets.TWITTER_OSSDISCOVERIES_CONSUMER_KEY }}
+        TWITTER_OSSDISCOVERIES_CONSUMER_SECRET: ${{ secrets.TWITTER_OSSDISCOVERIES_CONSUMER_SECRET }}
+        TWITTER_OSSDISCOVERIES_ACCESS_TOKEN: ${{ secrets.TWITTER_OSSDISCOVERIES_ACCESS_TOKEN }}
+        TWITTER_OSSDISCOVERIES_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_OSSDISCOVERIES_ACCESS_TOKEN_SECRET }}
+        TWITTER_OSSDISCOVERIES_BEARER_TOKEN: ${{ secrets.TWITTER_OSSDISCOVERIES_BEARER_TOKEN }}
+        
+        # AI Flow Watch账号
+        TWITTER_AIFLOWWATCH_CONSUMER_KEY: ${{ secrets.TWITTER_AIFLOWWATCH_CONSUMER_KEY }}
+        TWITTER_AIFLOWWATCH_CONSUMER_SECRET: ${{ secrets.TWITTER_AIFLOWWATCH_CONSUMER_SECRET }}
+        TWITTER_AIFLOWWATCH_ACCESS_TOKEN: ${{ secrets.TWITTER_AIFLOWWATCH_ACCESS_TOKEN }}
+        TWITTER_AIFLOWWATCH_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_AIFLOWWATCH_ACCESS_TOKEN_SECRET }}
+        TWITTER_AIFLOWWATCH_BEARER_TOKEN: ${{ secrets.TWITTER_AIFLOWWATCH_BEARER_TOKEN }}
+        
+        # Open Source Reader账号
+        TWITTER_OPENSOURCEREADER_CONSUMER_KEY: ${{ secrets.TWITTER_OPENSOURCEREADER_CONSUMER_KEY }}
+        TWITTER_OPENSOURCEREADER_CONSUMER_SECRET: ${{ secrets.TWITTER_OPENSOURCEREADER_CONSUMER_SECRET }}
+        TWITTER_OPENSOURCEREADER_ACCESS_TOKEN: ${{ secrets.TWITTER_OPENSOURCEREADER_ACCESS_TOKEN }}
+        TWITTER_OPENSOURCEREADER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_OPENSOURCEREADER_ACCESS_TOKEN_SECRET }}
+        TWITTER_OPENSOURCEREADER_BEARER_TOKEN: ${{ secrets.TWITTER_OPENSOURCEREADER_BEARER_TOKEN }}
+        
+      run: |
+        python3 << 'EOF'
+        import os
+        import sys
+        import json
+        import re
+        from main_multi_account import MultiAccountTwitterPublisher
+        
+        # 获取Issue内容
+        issue_body = """${{ github.event.issue.body }}"""
+        issue_number = "${{ github.event.issue.number }}"
+        
+        print(f"🔍 处理Issue #{issue_number}")
+        print(f"📝 Issue内容: {issue_body[:100]}...")
+        
+        def parse_issue_content(content):
+            """解析Issue内容，提取推文数据"""
+            tweets = []
+            
+            # 方法1：JSON格式
+            json_match = re.search(r'```json\n(.*?)\n```', content, re.DOTALL)
+            if json_match:
+                try:
+                    data = json.loads(json_match.group(1))
+                    if isinstance(data, list):
+                        tweets.extend(data)
+                    else:
+                        tweets.append(data)
+                    return tweets
+                except:
+                    pass
+            
+            # 方法2：结构化文本格式
+            lines = content.split('\n')
+            current_tweet = {}
+            
+            for line in lines:
+                line = line.strip()
+                if line.startswith('**内容:**') or line.startswith('内容:'):
+                    current_tweet['content'] = line.split(':', 1)[1].strip()
+                elif line.startswith('**账号:**') or line.startswith('账号:'):
+                    current_tweet['account'] = line.split(':', 1)[1].strip()
+                elif line.startswith('---') and current_tweet:
+                    tweets.append(current_tweet)
+                    current_tweet = {}
+            
+            # 添加最后一条推文
+            if current_tweet.get('content'):
+                tweets.append(current_tweet)
+            
+            # 方法3：简单格式（如果没有找到结构化内容）
+            if not tweets:
+                # 查找可能的推文内容
+                content_lines = [line.strip() for line in lines if line.strip() and not line.startswith('#')]
+                if content_lines:
+                    tweets.append({
+                        'content': '\n'.join(content_lines[:3]),  # 取前3行作为内容
+                        'account': 'ContextSpace'  # 默认账号
+                    })
+            
+            return tweets
+        
+        def normalize_account_name(account):
+            """标准化账号名称"""
+            account = account.lower().strip()
+            mapping = {
+                'contextspace': 'ContextSpace',
+                'context space': 'ContextSpace',
+                'twitter': 'ContextSpace',
+                'oss discoveries': 'OSS Discoveries',
+                'ossdiscoveries': 'OSS Discoveries',
+                'oss': 'OSS Discoveries',
+                'ai flow watch': 'Ai flow watch',
+                'aiflowwatch': 'Ai flow watch',
+                'ai': 'Ai flow watch',
+                'open source reader': 'Open source reader',
+                'opensourcereader': 'Open source reader',
+                'reader': 'Open source reader'
+            }
+            return mapping.get(account, 'ContextSpace')
+        
+        try:
+            # 解析推文数据
+            tweets = parse_issue_content(issue_body)
+            
+            if not tweets:
+                print("❌ 未找到有效的推文内容")
+                sys.exit(1)
+            
+            print(f"✅ 解析到 {len(tweets)} 条推文")
+            
+            # 初始化发布器
+            publisher = MultiAccountTwitterPublisher()
+            
+            # 发布推文
+            success_count = 0
+            for i, tweet in enumerate(tweets):
+                content = tweet.get('content', '').strip()
+                account = normalize_account_name(tweet.get('account', 'ContextSpace'))
+                
+                if not content:
+                    print(f"⚠️ 第{i+1}条推文内容为空，跳过")
+                    continue
+                
+                if len(content) > 280:
+                    print(f"⚠️ 第{i+1}条推文内容超长({len(content)}字符)，截断处理")
+                    content = content[:277] + "..."
+                
+                print(f"📤 发布第{i+1}条推文到 {account}")
+                print(f"📝 内容: {content[:50]}...")
+                
+                try:
+                    result = publisher.publish_single_tweet(content, account)
+                    if result:
+                        success_count += 1
+                        print(f"✅ 第{i+1}条推文发布成功")
+                    else:
+                        print(f"❌ 第{i+1}条推文发布失败")
+                except Exception as e:
+                    print(f"💥 第{i+1}条推文发布异常: {str(e)}")
+            
+            print(f"\n🎉 发布完成: {success_count}/{len(tweets)} 条成功")
+            
+            # 设置输出变量用于后续步骤
+            with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                f.write(f"success_count={success_count}\n")
+                f.write(f"total_count={len(tweets)}\n")
+                
+        except Exception as e:
+            print(f"💥 发布过程出现错误: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            sys.exit(1)
+        EOF
+        
+    - name: 💬 回复Issue结果
+      uses: actions/github-script@v7
+      if: always()
+      with:
+        script: |
+          const success_count = '${{ steps.parse-and-publish.outputs.success_count }}' || '0';
+          const total_count = '${{ steps.parse-and-publish.outputs.total_count }}' || '0';
+          
+          let comment = '';
+          if (success_count > 0) {
+            comment = `🎉 **推文发布完成！**\n\n✅ 成功发布: ${success_count}/${total_count} 条推文\n\n📊 发布结果已记录，感谢您的使用！`;
+          } else {
+            comment = `❌ **推文发布失败**\n\n可能的原因：\n- 推文内容格式不正确\n- 推文内容为空\n- Twitter API配额已满\n- 网络连接问题\n\n请检查Issue内容格式并重试。`;
+          }
+          
+          await github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+          
+    - name: 🏷️ 添加标签
+      uses: actions/github-script@v7
+      if: always()
+      with:
+        script: |
+          const success_count = '${{ steps.parse-and-publish.outputs.success_count }}' || '0';
+          
+          const label = success_count > 0 ? 'published' : 'failed';
+          
+          await github.rest.issues.addLabels({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            labels: [label]
+          }); 
