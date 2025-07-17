@@ -97,7 +97,7 @@ class MultiAccountTwitterPublisher:
             logger.info(f"正在发布推文到账号 {normalized_account}")
             logger.info(f"推文内容: {content[:50]}...")
             
-            response = api.create_tweet(text=content)
+            response = api.create_tweet(content)
             
             if response and response.data:
                 tweet_id = response.data['id']
