@@ -1,120 +1,112 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-手动推文发布脚本
-用于GitHub Actions工作流手动发布推文
+Twitter手动发布脚本
+支持单条推文立即发布，优化为只连接指定账号
 """
 
-import os
 import sys
-import argparse
 import logging
 from datetime import datetime
-
-# 添加当前目录到Python路径
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 from main_multi_account import MultiAccountTwitterPublisher
 
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('twitter_manual_publish.log', encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
-def setup_logging():
-    """设置日志记录"""
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler('manual_publish.log', encoding='utf-8'),
-            logging.StreamHandler(sys.stdout)
-        ]
-    )
-    return logging.getLogger(__name__)
-
-
-def validate_tweet_content(content):
-    """验证推文内容"""
-    if not content:
-        raise ValueError("推文内容不能为空")
+def publish_single_tweet_manual(content: str, account: str = "ContextSpace") -> bool:
+    """
+    手动发布单条推文（单账号模式，不影响其他账号）
     
-    if len(content) > 280:
-        raise ValueError(f"推文内容超过280字符限制，当前长度：{len(content)}")
-    
-    return True
-
-
-def validate_account(account):
-    """验证账号名称"""
-    valid_accounts = ['ContextSpace', 'OSS Discoveries', 'Ai flow watch', 'Open source reader']
-    
-    if account not in valid_accounts:
-        raise ValueError(f"无效的账号名称：{account}。有效账号：{', '.join(valid_accounts)}")
-    
-    return True
-
+    Args:
+        content: 推文内容
+        account: 发布账号
+        
+    Returns:
+        bool: 发布是否成功
+    """
+    try:
+        logger.info("🚀 启动手动单条推文发布")
+        logger.info("=" * 60)
+        
+        # 初始化发布器
+        publisher = MultiAccountTwitterPublisher()
+        
+        # 使用单账号立即发布模式
+        result = publisher.publish_single_tweet_only(content, account)
+        
+        # 输出结果
+        logger.info("📊 发布结果:")
+        logger.info("=" * 60)
+        
+        if result['success']:
+            logger.info(f"✅ {result['message']}")
+            logger.info(f"📍 账号: @{result['details'].get('username', 'unknown')}")
+            logger.info(f"📝 内容: {result['details'].get('content', content[:50])}")
+            return True
+        else:
+            logger.error(f"❌ {result['message']}")
+            if 'error' in result['details']:
+                logger.error(f"错误详情: {result['details']['error']}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"💥 手动发布时发生异常: {str(e)}")
+        return False
 
 def main():
     """主函数"""
-    parser = argparse.ArgumentParser(description='手动发布Twitter推文')
-    parser.add_argument('--content', required=True, help='推文内容')
-    parser.add_argument('--account', required=True, help='目标账号')
-    parser.add_argument('--debug', action='store_true', help='调试模式（不实际发布）')
-    
-    args = parser.parse_args()
-    
-    logger = setup_logging()
-    
-    try:
-        # 验证输入
-        validate_tweet_content(args.content)
-        validate_account(args.account)
-        
-        logger.info("🚀 开始手动发布推文")
-        logger.info(f"📄 推文内容: {args.content}")
-        logger.info(f"📱 目标账号: {args.account}")
-        logger.info(f"🐛 调试模式: {args.debug}")
-        logger.info(f"⏰ 执行时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        
-        if args.debug:
-            logger.info("🐛 调试模式已启用 - 不会实际发布推文")
-            logger.info("📝 推文预览：")
-            logger.info(f"  账号: {args.account}")
-            logger.info(f"  内容: {args.content}")
-            logger.info("✅ 调试模式完成")
-            return 0
-        
-        # 创建发布器
-        publisher = MultiAccountTwitterPublisher()
-        
-        # 构建文章数据
-        article_data = {
-            'title': args.content[:50] + '...' if len(args.content) > 50 else args.content,
-            'content': args.content,
-            'author': '手动发布',
-            'source': '手动发布',
-            'publish_account': args.account,
-            'published': '否',
-            'is_published': False,
-            '_source_file': 'manual_publish.py',
-            '_row_index': 0,
-            '_original_row': {}
-        }
-        
-        logger.info(f"📤 发布推文到: {article_data['publish_account']}")
-        logger.info(f"📝 推文内容: {article_data['content']}")
-        
-        # 发布推文
-        success = publisher.publish_article(article_data)
-        
-        if success:
-            logger.info("✅ 推文发布成功！")
-            return 0
-        else:
-            logger.error("❌ 推文发布失败")
-            return 1
-            
-    except Exception as e:
-        logger.error(f"❌ 手动发布过程中发生错误: {str(e)}")
-        return 1
+    if len(sys.argv) < 2:
+        print("""
+🐦 Twitter手动发布脚本使用方法:
 
+python manual_publish.py "推文内容" [账号]
+
+参数说明:
+  推文内容: 要发布的推文文本（必需）
+  账号: 发布账号，支持以下选项（可选，默认ContextSpace）:
+    - ContextSpace 或 twitter (主账号)
+    - OSS Discoveries 或 oss (开源工具账号)
+    - Ai flow watch 或 ai (AI技术账号)  
+    - Open source reader 或 reader (开源项目账号)
+
+示例:
+  python manual_publish.py "这是一条测试推文"
+  python manual_publish.py "分享一个AI工具" "Ai flow watch"
+  python manual_publish.py "推荐开源项目" "OSS Discoveries"
+
+特点:
+  ✅ 单账号模式 - 只连接指定账号，不影响其他账号
+  ✅ 即时发布 - 立即发布到指定Twitter账号
+  ✅ 详细日志 - 完整的发布过程和结果记录
+        """)
+        sys.exit(1)
+    
+    # 获取参数
+    content = sys.argv[1]
+    account = sys.argv[2] if len(sys.argv) > 2 else "ContextSpace"
+    
+    print(f"📝 推文内容: {content}")
+    print(f"🎯 发布账号: {account}")
+    print(f"🕒 发布时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("")
+    
+    # 发布推文
+    success = publish_single_tweet_manual(content, account)
+    
+    if success:
+        print("\n🎉 推文发布成功！")
+        sys.exit(0)
+    else:
+        print("\n❌ 推文发布失败！")
+        sys.exit(1)
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    main() 

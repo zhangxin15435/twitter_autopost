@@ -52,7 +52,7 @@ class MultiAccountTwitterPublisher:
     
     def publish_single_tweet(self, content: str, account_name: str) -> bool:
         """
-        发布单条推文到指定账号
+        发布单条推文到指定账号（只请求指定账号的API，不影响其他账号）
         
         Args:
             content: 推文内容
@@ -85,8 +85,10 @@ class MultiAccountTwitterPublisher:
                 logger.warning(f"账号 {normalized_account} 已被排除，跳过发布")
                 return False
             
-            # 获取API连接
-            api = self.account_manager.get_api(normalized_account)
+            logger.info(f"🎯 单账号发布模式：只连接 {normalized_account} 账号")
+            
+            # 获取指定账号的API连接（只连接这一个账号）
+            api = self.account_manager.get_api_for_account(normalized_account)
             if not api:
                 logger.error(f"无法获取账号 {normalized_account} 的API连接")
                 return False
@@ -99,15 +101,150 @@ class MultiAccountTwitterPublisher:
             
             if response and response.data:
                 tweet_id = response.data['id']
-                logger.info(f"✅ 推文发布成功！Tweet ID: {tweet_id}")
+                username = api.username
+                tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
+                
+                logger.info(f"🎉 推文发布成功！")
+                logger.info(f"   账号: @{username}")
+                logger.info(f"   推文ID: {tweet_id}")
+                logger.info(f"   链接: {tweet_url}")
+                
                 return True
             else:
-                logger.error(f"❌ 推文发布失败，API响应异常")
+                logger.error(f"❌ 推文发布失败：API响应无效")
                 return False
                 
         except Exception as e:
             logger.error(f"💥 发布推文时出现异常: {str(e)}")
             return False
+    
+    def test_single_account(self, account_name: str) -> Dict:
+        """
+        测试单个账号的连接状态（只连接指定账号，不影响其他账号）
+        
+        Args:
+            account_name: 账号名称
+            
+        Returns:
+            Dict: 账号测试结果
+        """
+        try:
+            # 标准化账号名称
+            account_mapping = {
+                'contextspace': 'contextspace',
+                'context space': 'contextspace', 
+                'twitter': 'contextspace',
+                'oss discoveries': 'ossdiscoveries',
+                'ossdiscoveries': 'ossdiscoveries',
+                'oss': 'ossdiscoveries',
+                'ai flow watch': 'aiflowwatch',
+                'aiflowwatch': 'aiflowwatch', 
+                'ai': 'aiflowwatch',
+                'open source reader': 'opensourcereader',
+                'opensourcereader': 'opensourcereader',
+                'reader': 'opensourcereader'
+            }
+            
+            normalized_account = account_mapping.get(account_name.lower().strip(), 'contextspace')
+            
+            logger.info(f"🔍 单账号测试模式：只测试 {normalized_account} 账号连接")
+            
+            # 只获取指定账号的API连接
+            api = self.account_manager.get_api_for_account(normalized_account)
+            if api:
+                return {
+                    normalized_account: {
+                        'status': 'success',
+                        'username': api.username,
+                        'account_name': api.account_name
+                    }
+                }
+            else:
+                return {
+                    normalized_account: {
+                        'status': 'failed',
+                        'error': 'API连接失败'
+                    }
+                }
+                
+        except Exception as e:
+            logger.error(f"测试账号 '{account_name}' 时发生错误: {str(e)}")
+            return {
+                account_name: {
+                    'status': 'error',
+                    'error': str(e)
+                }
+            }
+    
+    def publish_single_tweet_only(self, content: str, account_name: str) -> Dict:
+        """
+        单账号立即发布模式（专用于前端界面和Issue发布）
+        只连接和使用指定账号，不对其他账号发送任何API请求
+        
+        Args:
+            content: 推文内容
+            account_name: 账号名称
+            
+        Returns:
+            Dict: 发布结果 {'success': bool, 'message': str, 'details': dict}
+        """
+        try:
+            logger.info(f"🚀 启动单账号立即发布模式")
+            logger.info(f"🎯 目标账号: {account_name}")
+            logger.info(f"📝 推文内容: {content[:50]}...")
+            
+            # 先测试指定账号连接（只测试这一个账号）
+            test_result = self.test_single_account(account_name)
+            account_key = list(test_result.keys())[0]
+            
+            if test_result[account_key]['status'] != 'success':
+                error_msg = f"账号 {account_name} 连接失败: {test_result[account_key].get('error', '未知错误')}"
+                logger.error(f"❌ {error_msg}")
+                return {
+                    'success': False,
+                    'message': error_msg,
+                    'details': test_result[account_key]
+                }
+            
+            # 连接成功，记录账号信息
+            username = test_result[account_key]['username']
+            logger.info(f"✅ 账号连接成功: @{username}")
+            
+            # 发布推文（只连接指定账号）
+            success = self.publish_single_tweet(content, account_name)
+            
+            if success:
+                success_msg = f"推文发布成功到账号 @{username}"
+                logger.info(f"🎉 {success_msg}")
+                return {
+                    'success': True,
+                    'message': success_msg,
+                    'details': {
+                        'account': account_key,
+                        'username': username,
+                        'content': content[:50] + ('...' if len(content) > 50 else '')
+                    }
+                }
+            else:
+                error_msg = f"推文发布失败到账号 @{username}"
+                logger.error(f"❌ {error_msg}")
+                return {
+                    'success': False,
+                    'message': error_msg,
+                    'details': {
+                        'account': account_key,
+                        'username': username
+                    }
+                }
+                
+        except Exception as e:
+            error_msg = f"单账号发布时发生异常: {str(e)}"
+            logger.error(f"💥 {error_msg}")
+            return {
+                'success': False,
+                'message': error_msg,
+                'details': {'error': str(e)}
+            }
     
     def load_content_data(self) -> List[Dict]:
         """加载content文件夹中的数据"""

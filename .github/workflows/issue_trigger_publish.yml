@@ -171,12 +171,14 @@ jobs:
                 print(f"📝 内容: {content[:50]}...")
                 
                 try:
-                    result = publisher.publish_single_tweet(content, account)
-                    if result:
+                    # 使用单账号立即发布模式，避免对其他账号发送API请求
+                    result = publisher.publish_single_tweet_only(content, account)
+                    if result['success']:
                         success_count += 1
                         print(f"✅ 第{i+1}条推文发布成功")
+                        print(f"   账号: {result['details'].get('username', 'unknown')}")
                     else:
-                        error_msg = f"第{i+1}条推文发布失败"
+                        error_msg = f"第{i+1}条推文发布失败: {result['message']}"
                         print(f"❌ {error_msg}")
                         error_messages.append(error_msg)
                 except Exception as e:
