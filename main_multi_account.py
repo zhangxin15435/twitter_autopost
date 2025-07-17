@@ -99,10 +99,10 @@ class MultiAccountTwitterPublisher:
             
             response = api.create_tweet(content)
             
-            if response and response.data:
-                tweet_id = response.data['id']
-                username = api.username
-                tweet_url = f"https://twitter.com/{username}/status/{tweet_id}"
+            if response and response.get('id'):
+                tweet_id = response['id']
+                username = response['username']
+                tweet_url = response['url']
                 
                 logger.info(f"🎉 推文发布成功！")
                 logger.info(f"   账号: @{username}")

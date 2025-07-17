@@ -93,9 +93,15 @@ jobs:
             for line in lines:
                 line = line.strip()
                 if line.startswith('**内容:**') or line.startswith('内容:'):
-                    current_tweet['content'] = line.split(':', 1)[1].strip()
+                    content_text = line.split(':', 1)[1].strip()
+                    # 清理可能的星号
+                    content_text = content_text.lstrip('*').strip()
+                    current_tweet['content'] = content_text
                 elif line.startswith('**账号:**') or line.startswith('账号:'):
-                    current_tweet['account'] = line.split(':', 1)[1].strip()
+                    account_text = line.split(':', 1)[1].strip()
+                    # 清理可能的星号
+                    account_text = account_text.lstrip('*').strip()
+                    current_tweet['account'] = account_text
                 elif line.startswith('---') and current_tweet:
                     tweets.append(current_tweet)
                     current_tweet = {}
