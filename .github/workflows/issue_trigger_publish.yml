@@ -24,6 +24,7 @@ jobs:
         pip install -r requirements.txt
         
     - name: 📝 解析Issue内容并发布
+      id: parse-and-publish
       env:
         # Twitter API密钥 - ContextSpace主账号
         TWITTER_CONTEXTSPACE_CONSUMER_KEY: ${{ secrets.TWITTER_CONTEXTSPACE_CONSUMER_KEY }}
