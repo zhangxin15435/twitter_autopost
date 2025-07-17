@@ -62,12 +62,24 @@ jobs:
         import re
         from main_multi_account import MultiAccountTwitterPublisher
         
-        # 获取Issue内容
-        issue_body = """${{ github.event.issue.body }}"""
-        issue_number = "${{ github.event.issue.number }}"
+        # 获取Issue内容 - 使用更安全的方式避免GitHub Actions多行内容截断问题
+        import json
+        
+        # 通过环境变量获取Issue数据，避免直接字符串插值的截断问题
+        issue_data = json.loads('${{ toJson(github.event.issue) }}')
+        issue_body = issue_data.get('body', '')
+        issue_number = issue_data.get('number', 'unknown')
         
         print(f"🔍 处理Issue #{issue_number}")
-        print(f"📝 Issue内容: {issue_body[:100]}...")
+        print(f"📝 Issue内容长度: {len(issue_body)} 字符")
+        print(f"📝 Issue内容前100字符: {issue_body[:100]}...")
+        
+        # 输出调试信息以确认内容完整性
+        if len(issue_body) > 100:
+            print(f"📝 Issue内容后100字符: ...{issue_body[-100:]}")
+        
+        print(f"🔍 Issue内容包含多行: {'是' if chr(10) in issue_body else '否'}")
+        print(f"🔍 Issue内容包含特殊字符: {'是' if any(ord(c) > 127 for c in issue_body) else '否'}")
         
         def parse_issue_content(content):
             """解析Issue内容，提取推文数据"""
@@ -187,7 +199,10 @@ jobs:
                     content = content[:277] + "..."
                 
                 print(f"📤 发布第{i+1}条推文到 {account}")
-                print(f"📝 内容: {content[:50]}...")
+                print(f"📝 内容长度: {len(content)} 字符")
+                print(f"📝 内容前50字符: {content[:50]}...")
+                if len(content) > 50:
+                    print(f"📝 内容后50字符: ...{content[-50:]}")
                 
                 try:
                     # 使用单账号立即发布模式，避免对其他账号发送API请求
