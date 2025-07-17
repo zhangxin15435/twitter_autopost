@@ -115,10 +115,22 @@ jobs:
                 # 查找可能的推文内容
                 content_lines = [line.strip() for line in lines if line.strip() and not line.startswith('#')]
                 if content_lines:
-                    tweets.append({
-                        'content': '\n'.join(content_lines[:3]),  # 取前3行作为内容
-                        'account': 'ContextSpace'  # 默认账号
-                    })
+                    # 取所有内容，但检查长度限制
+                    full_content = '\n'.join(content_lines)
+                    
+                    # 如果内容超过280字符，截断并添加提示
+                    if len(full_content) > 280:
+                        truncated_content = full_content[:270] + "...[内容过长已截断]"
+                        print(f"⚠️ 内容超长({len(full_content)}字符)，已截断为: {truncated_content}")
+                        tweets.append({
+                            'content': truncated_content,
+                            'account': 'ContextSpace'  # 默认账号
+                        })
+                    else:
+                        tweets.append({
+                            'content': full_content,
+                            'account': 'ContextSpace'  # 默认账号
+                        })
             
             return tweets
         
